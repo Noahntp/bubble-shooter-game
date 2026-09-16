@@ -188,10 +188,6 @@ export const GameShell: React.FC = () => {
       const scene = gameRef.current.scene.getScene('GameScene') as GameScene;
       if (scene) {
         scene.loadLevel(levelConfig);
-        // If player has saved phone, grant the bonus shots for the new session
-        if (playerPhone) {
-          eventBridge.emit(GAME_EVENTS.APPLY_WELCOME_BONUS);
-        }
       }
     }
   };
@@ -255,7 +251,7 @@ export const GameShell: React.FC = () => {
     setPlayerPhone(phone);
     setIsPhoneLoginOpen(false);
     setIsRewardModalOpen(true);
-    eventBridge.emit(GAME_EVENTS.APPLY_WELCOME_BONUS);
+    eventBridge.emit(GAME_EVENTS.APPLY_WELCOME_BONUS, { bonusShots: 5, bonusScore: 500 });
   };
 
   // STEP 5: User clicks "Vào bắn ngay" on reward modal -> start playing

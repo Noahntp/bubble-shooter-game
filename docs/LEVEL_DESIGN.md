@@ -11,16 +11,16 @@ Bubble Pop Arcade được thiết kế với lộ trình thử thách chuẩn A
 
 | Màn | Tên Màn Chơi | Màu Sắc | Số Hàng Ban Đầu | Số Lượt Bắn | Điểm Mục Tiêu | Ngưỡng 1 / 2 / 3 Sao | Đặc Điểm Nổi Bật |
 |---|---|---|---|---|---|---|---|
-| **1** | Rừng Ngọc Bích | Đỏ, Xanh dương, Xanh lá | 5 | 28 | 1,200 | 800 / 1,200 / 1,800 | Hướng dẫn, Bóng Thưởng |
-| **2** | Chân Trời Vàng | Đỏ, Xanh dương, Xanh lá, Vàng | 6 | 26 | 1,800 | 1,200 / 1,800 / 2,600 | Xuất hiện Bóng Bom |
-| **3** | Hang Pha Lê | Đỏ, Xanh dương, Xanh lá, Tím | 6 | 25 | 2,400 | 1,600 / 2,400 / 3,400 | Xuất hiện Bóng Đóng Băng |
-| **4** | Vết Nứt Cầu Vồng | Đủ 5 màu | 7 | 24 | 3,000 | 2,000 / 3,000 / 4,200 | Xuất hiện Bóng Cầu Vồng |
-| **5** | Đỉnh Sấm Sét | Đủ 5 màu | 7 | 23 | 3,600 | 2,400 / 3,600 / 5,000 | Xuất hiện Bóng Sét |
-| **6** | Mật Thất Bóng Đêm | Đủ 5 màu | 7 | 22 | 4,200 | 2,800 / 4,200 / 5,800 | Xuất hiện Lời Nguyền (phạt) |
-| **7** | Vùng Cực Hạn | Đủ 5 màu | 8 | 22 | 4,800 | 3,200 / 4,800 / 6,500 | Xuất hiện Bóng Bẫy |
-| **8** | Thánh Địa Băng Giá | Đủ 5 màu | 8 | 20 | 5,400 | 3,600 / 5,400 / 7,200 | Cụm bóng băng dày đặc |
-| **9** | Thành Trì Hắc Diệu | Đủ 5 màu | 8 | 20 | 6,000 | 4,000 / 6,000 / 8,000 | Chuỗi Bom & Sét liên hoàn |
-| **10**| Nhật Thực Huyền Thoại | Đủ 5 màu | 9 | 20 | 7,000 | 4,500 / 7,000 / 9,500 | Bàn cờ cao cấp đỉnh cao |
+| **1** | Rừng Ngọc Bích | Đỏ, Xanh dương, Xanh lá | 5 | 26 | 1,200 | 800 / 1,200 / 1,800 | Hướng dẫn, Bóng Thưởng |
+| **2** | Chân Trời Vàng | Đỏ, Xanh dương, Xanh lá, Vàng | 6 | 28 | 1,800 | 1,200 / 1,800 / 2,600 | Xuất hiện Bóng Bom |
+| **3** | Hang Pha Lê | Đỏ, Xanh dương, Xanh lá, Tím | 6 | 30 | 2,400 | 1,600 / 2,400 / 3,400 | Xuất hiện Bóng Đóng Băng |
+| **4** | Vết Nứt Cầu Vồng | Đủ 5 màu | 7 | 32 | 3,000 | 2,000 / 3,000 / 4,200 | Xuất hiện Bóng Cầu Vồng |
+| **5** | Đỉnh Sấm Sét | Đủ 5 màu | 7 | 34 | 3,600 | 2,400 / 3,600 / 5,000 | Xuất hiện Bóng Sét |
+| **6** | Mật Thất Bóng Đêm | Đủ 5 màu | 7 | 35 | 4,200 | 2,800 / 4,200 / 5,800 | Xuất hiện Lời Nguyền (phạt) |
+| **7** | Vùng Cực Hạn | Đủ 5 màu | 8 | 36 | 4,800 | 3,200 / 4,800 / 6,500 | Xuất hiện Bóng Bẫy |
+| **8** | Thánh Địa Băng Giá | Đủ 5 màu | 8 | 38 | 5,400 | 3,600 / 5,400 / 7,200 | Cụm bóng băng dày đặc |
+| **9** | Thành Trì Hắc Diệu | Đủ 5 màu | 8 | 40 | 6,000 | 4,000 / 6,000 / 8,000 | Chuỗi Bom & Sét liên hoàn |
+| **10**| Nhật Thực Huyền Thoại | Đủ 5 màu | 9 | 42 | 7,000 | 4,500 / 7,000 / 9,500 | Bàn cờ cao cấp đỉnh cao |
 
 ---
 
