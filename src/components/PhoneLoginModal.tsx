@@ -122,23 +122,21 @@ export const PhoneLoginModal: React.FC<PhoneLoginModalProps> = ({
             <form onSubmit={handleSubmit} className="w-full">
               {/* Input Container */}
               <div 
-                className="w-full h-[50px] flex items-center bg-slate-950/95 border-2 border-cyan-400/60 focus-within:border-cyan-300 focus-within:ring-2 focus-within:ring-cyan-400/30 rounded-2xl overflow-hidden shadow-inner transition-all box-border mb-1.5"
+                className="w-full h-[52px] flex items-center bg-slate-950/95 border-2 border-cyan-400/60 focus-within:border-cyan-300 focus-within:ring-2 focus-within:ring-cyan-400/30 rounded-2xl overflow-hidden shadow-inner transition-all box-border mb-2"
               >
-                {/* Prefix Box with Explicit Dimensions for Flag and +84 */}
+                {/* Prefix Box - Balanced, tight and perfectly centered */}
                 <div 
-                  className="flex items-center gap-2 h-full bg-slate-900/95 border-r border-white/20 shrink-0 select-none px-3.5"
-                  style={{ minWidth: '82px' }}
+                  className="flex items-center gap-2.5 h-full bg-slate-900/95 border-r border-cyan-500/30 shrink-0 select-none px-3.5"
                 >
-                  {/* Robust Non-Collapsible Vietnam SVG Flag */}
+                  {/* Vietnam Flag */}
                   <div 
-                    className="shrink-0 rounded-[3px] overflow-hidden shadow-sm flex items-center justify-center"
-                    style={{ width: '24px', height: '16px', minWidth: '24px', minHeight: '16px' }}
+                    className="w-6 h-4 shrink-0 rounded-[2px] overflow-hidden shadow-sm flex items-center justify-center"
                   >
                     <svg 
                       width="24" 
                       height="16" 
                       viewBox="0 0 30 20" 
-                      style={{ width: '24px', height: '16px', display: 'block' }}
+                      className="w-full h-full block"
                       aria-label="Vietnam"
                     >
                       <rect width="30" height="20" fill="#da251d" />
@@ -149,26 +147,26 @@ export const PhoneLoginModal: React.FC<PhoneLoginModalProps> = ({
                     </svg>
                   </div>
 
-                  <span className="font-heading text-sm font-black text-amber-400 tracking-tight leading-none">
+                  <span className="font-mono text-sm font-bold text-amber-300 tracking-tight leading-none">
                     +84
                   </span>
                 </div>
 
-                {/* Main Phone Input */}
+                {/* Main Phone Input - Monospace for numbers, clean standard placeholder */}
                 <input
                   type="tel"
                   inputMode="numeric"
                   pattern="[0-9]*"
                   value={phone}
                   onChange={handlePhoneChange}
-                  placeholder="09xx xxx xxx"
+                  placeholder="0912 345 678"
                   maxLength={11}
-                  className="flex-1 h-full bg-transparent px-3.5 text-white font-heading text-base font-bold placeholder:text-slate-500 focus:outline-none tracking-wider"
+                  className="flex-1 h-full bg-transparent px-3.5 text-white font-mono text-base font-semibold placeholder:font-sans placeholder:text-slate-500 placeholder:text-sm placeholder:tracking-normal focus:outline-none tracking-wider leading-normal"
                   autoFocus
                 />
 
                 {isValid && (
-                  <div className="pr-3 text-emerald-400 shrink-0 flex items-center">
+                  <div className="pr-3.5 text-emerald-400 shrink-0 flex items-center">
                     <CheckCircle2 size={20} />
                   </div>
                 )}
