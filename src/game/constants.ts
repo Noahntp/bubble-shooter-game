@@ -12,11 +12,11 @@ export const BOARD_WIDTH = GRID_COLS * BUBBLE_DIAMETER; // 480px
 export const LEFT_WALL_X = LEFT_MARGIN;
 export const RIGHT_WALL_X = LEFT_MARGIN + BOARD_WIDTH; // 500px
 
-export const CEILING_Y = 100;
-export const DANGER_LINE_Y = 665;
+export const CEILING_Y = 104;
+export const DANGER_LINE_Y = 645;
 
 export const SHOOTER_X = GAME_WIDTH / 2;
-export const SHOOTER_Y = 740;
+export const SHOOTER_Y = 715;
 export const NEXT_BUBBLE_X = SHOOTER_X - 110;
 export const NEXT_BUBBLE_Y = SHOOTER_Y + 5;
 

@@ -1,37 +1,56 @@
 import React, { useEffect, useRef, useState } from 'react';
 import Phaser from 'phaser';
 import { GameScene } from '../game/GameScene';
-import { GAME_WIDTH, GAME_HEIGHT } from '../game/constants';
-import { GameStats, LevelConfig } from '../types/game';
-import { LEVELS } from '../levels/levelData';
-import { eventBridge, GAME_EVENTS } from '../game/EventBridge';
-import { audioManager } from '../audio/AudioManager';
-import { apiService } from '../services/api';
 import { HUD } from './HUD';
 import { VictoryModal, GameOverModal, PauseModal } from './Modals';
 import { LevelSelect } from './LevelSelect';
 import { DebugOverlay } from './DebugOverlay';
+import { WelcomeScreen } from './WelcomeScreen';
+import { PhoneLoginModal } from './PhoneLoginModal';
+import { RewardModal } from './RewardModal';
+import { QRCodeModal } from './QRCodeModal';
+import { eventBridge, GAME_EVENTS } from '../game/EventBridge';
+import { GameStats, LevelConfig } from '../types/game';
+import { LEVELS } from '../levels/levelData';
+import { GAME_HEIGHT, GAME_WIDTH } from '../game/constants';
+import { audioManager } from '../audio/AudioManager';
+import { apiService } from '../services/api';
 
 export const GameShell: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const gameRef = useRef<Phaser.Game | null>(null);
 
+  // Level & Session
   const [currentLevel, setCurrentLevel] = useState<LevelConfig>(LEVELS[0]);
   const [stats, setStats] = useState<GameStats>({
     score: 0,
+    shotsLeft: LEVELS[0].maxShots,
     combo: 0,
     maxCombo: 0,
-    shotsLeft: 28,
     level: 1,
     stars: 0,
     boardOccupancy: 0.35,
     gameStatus: 'PLAYING'
   });
 
-  const [isPaused, setIsPaused] = useState(false);
-  const [isLevelSelectOpen, setIsLevelSelectOpen] = useState(false);
-  const [isMuted, setIsMuted] = useState(audioManager.getMuted());
-  const [volume, setVolume] = useState(audioManager.getVolume());
+  // Flow States: Quét QR > Ra game > Bấm/chơi > Nhập SĐT > Có thông báo thưởng > Lưu SĐT > Chơi
+  const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+  const modalParam = urlParams ? urlParams.get('modal') : null;
+
+  const [playerPhone, setPlayerPhone] = useState<string | null>(() => apiService.getPlayerPhone() || (modalParam === 'reward' ? '0912345678' : null));
+  const [isWelcomeOpen, setIsWelcomeOpen] = useState<boolean>(() => {
+    if (modalParam) return modalParam === 'welcome';
+    return !apiService.getPlayerPhone();
+  });
+  const [isPhoneLoginOpen, setIsPhoneLoginOpen] = useState<boolean>(() => modalParam === 'phone');
+  const [isRewardModalOpen, setIsRewardModalOpen] = useState<boolean>(() => modalParam === 'reward');
+  const [isQROpen, setIsQROpen] = useState<boolean>(() => modalParam === 'qr');
+
+  // Control modals & settings
+  const [isPaused, setIsPaused] = useState<boolean>(() => modalParam === 'pause');
+  const [isLevelSelectOpen, setIsLevelSelectOpen] = useState<boolean>(() => modalParam === 'level');
+  const [isMuted, setIsMuted] = useState<boolean>(false);
+  const [volume, setVolume] = useState<number>(0.8);
 
   // Modal outcomes
   const [winModalData, setWinModalData] = useState<{
@@ -39,24 +58,35 @@ export const GameShell: React.FC = () => {
     score: number;
     stars: number;
     shotsRemaining: number;
-  } | null>(null);
+  } | null>(() => modalParam === 'win' ? { level: 1, score: 3250, stars: 3, shotsRemaining: 6 } : null);
 
   const [loseModalData, setLoseModalData] = useState<{
     score: number;
     reason: string;
-  } | null>(null);
+  } | null>(() => modalParam === 'lose' ? { score: 1450, reason: 'Hết bóng bắn!' } : null);
 
-  // Spacebar to swap bubbles
+  // Pause on Escape
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.code === 'Space') {
-        e.preventDefault();
-        eventBridge.emit(GAME_EVENTS.SWAP_BUBBLES);
+      if (e.key === 'Escape') {
+        const isAnyModalOpen = isWelcomeOpen || isPhoneLoginOpen || isRewardModalOpen || isQROpen || isPaused;
+        if (!isAnyModalOpen) {
+          handlePause();
+        } else if (isPaused) {
+          handleResume();
+        }
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [isWelcomeOpen, isPhoneLoginOpen, isRewardModalOpen, isQROpen, isPaused]);
+
+  // Pause game if in welcome or auth flow
+  useEffect(() => {
+    if (isWelcomeOpen || isPhoneLoginOpen || isRewardModalOpen) {
+      handlePause();
+    }
+  }, [isWelcomeOpen, isPhoneLoginOpen, isRewardModalOpen]);
 
   // Initialize Phaser Game instance
   useEffect(() => {
@@ -72,7 +102,7 @@ export const GameShell: React.FC = () => {
       parent: containerRef.current,
       backgroundColor: '#0a0e1a',
       audio: {
-        noAudio: true // Phaser sound manager disabled; web game uses standalone audioManager
+        noAudio: true
       },
       scale: {
         mode: Phaser.Scale.FIT,
@@ -139,115 +169,110 @@ export const GameShell: React.FC = () => {
       eventBridge.off(GAME_EVENTS.SCORE_UPDATED, handleScoreUpdated);
       eventBridge.off(GAME_EVENTS.LEVEL_WON, handleLevelWon);
       eventBridge.off(GAME_EVENTS.LEVEL_LOST, handleLevelLost);
-      eventBridge.clearAllListeners();
       game.destroy(true);
       gameRef.current = null;
     };
   }, []);
 
-  // Audio mute toggle
-  const handleToggleMute = () => {
-    const newMuted = !isMuted;
-    setIsMuted(newMuted);
-    audioManager.setMuted(newMuted);
+  // Update scene when level changes
+  const switchLevel = (levelConfig: LevelConfig) => {
+    setCurrentLevel(levelConfig);
+    setWinModalData(null);
+    setLoseModalData(null);
+    setIsPaused(false);
+    setIsLevelSelectOpen(false);
+
+    apiService.startSession(levelConfig.level);
+
+    if (gameRef.current) {
+      const scene = gameRef.current.scene.getScene('GameScene') as GameScene;
+      if (scene) {
+        scene.loadLevel(levelConfig);
+        // If player has saved phone, grant the bonus shots for the new session
+        if (playerPhone) {
+          eventBridge.emit(GAME_EVENTS.APPLY_WELCOME_BONUS);
+        }
+      }
+    }
   };
 
-  // Audio volume slider
+  const handleNextLevel = () => {
+    const nextIdx = LEVELS.findIndex(l => l.level === currentLevel.level) + 1;
+    if (nextIdx < LEVELS.length) {
+      switchLevel(LEVELS[nextIdx]);
+    } else {
+      switchLevel(LEVELS[0]);
+    }
+  };
+
+  const handleRestartLevel = () => {
+    switchLevel(currentLevel);
+  };
+
+  const handleSelectLevel = (lvl: LevelConfig) => {
+    switchLevel(lvl);
+  };
+
+  const handlePause = () => {
+    setIsPaused(true);
+    if (gameRef.current) {
+      const scene = gameRef.current.scene.getScene('GameScene') as GameScene;
+      if (scene) scene.scene.pause();
+    }
+  };
+
+  const handleResume = () => {
+    setIsPaused(false);
+    if (gameRef.current) {
+      const scene = gameRef.current.scene.getScene('GameScene') as GameScene;
+      if (scene) scene.scene.resume();
+    }
+  };
+
+  const handleToggleMute = () => {
+    const newMute = !isMuted;
+    setIsMuted(newMute);
+    audioManager.setMuted(newMute);
+  };
+
   const handleVolumeChange = (vol: number) => {
     setVolume(vol);
     audioManager.setVolume(vol);
   };
 
-  // Pause toggle
-  const handlePause = () => {
-    setIsPaused(true);
-    const game = gameRef.current;
-    if (game) {
-      const scene = game.scene.getScene('GameScene') as GameScene;
-      if (scene && typeof scene.pauseGame === 'function') {
-        scene.pauseGame();
-      }
+  // STEP 2: User clicks "Bấm để chơi ngay" on Welcome screen -> opens phone login
+  const handleWelcomeStart = () => {
+    setIsWelcomeOpen(false);
+    if (!playerPhone) {
+      setIsPhoneLoginOpen(true);
+    } else {
+      handleResume();
     }
-    eventBridge.emit(GAME_EVENTS.PAUSE_GAME);
   };
 
-  const handleResume = () => {
-    setIsPaused(false);
-    const game = gameRef.current;
-    if (game) {
-      const scene = game.scene.getScene('GameScene') as GameScene;
-      if (scene && typeof scene.resumeGame === 'function') {
-        scene.resumeGame();
-      }
-    }
-    eventBridge.emit(GAME_EVENTS.RESUME_GAME);
+  // STEP 4: User successfully enters phone -> save, award bonus, open celebration reward modal
+  const handlePhoneSuccess = (phone: string) => {
+    setPlayerPhone(phone);
+    setIsPhoneLoginOpen(false);
+    setIsRewardModalOpen(true);
+    eventBridge.emit(GAME_EVENTS.APPLY_WELCOME_BONUS);
   };
 
-  const handleRestartLevel = () => {
-    setIsPaused(false);
-    setWinModalData(null);
-    setLoseModalData(null);
-    setStats({
-      score: 0,
-      shotsLeft: currentLevel.maxShots,
-      combo: 0,
-      maxCombo: 0,
-      level: currentLevel.level,
-      stars: 0,
-      boardOccupancy: 0.35,
-      gameStatus: 'PLAYING'
-    });
-    apiService.startSession(currentLevel.level);
-
-    const game = gameRef.current;
-    if (game && game.scene) {
-      const scene = game.scene.getScene('GameScene') as GameScene;
-      if (scene && scene.sys && scene.sys.settings.active && typeof scene.loadLevel === 'function') {
-        scene.loadLevel(currentLevel);
-        return;
-      }
-    }
-    eventBridge.emit(GAME_EVENTS.RESTART_LEVEL);
+  // STEP 5: User clicks "Vào bắn ngay" on reward modal -> start playing
+  const handleStartPlayingAfterReward = () => {
+    setIsRewardModalOpen(false);
+    handleResume();
   };
 
-  const handleSelectLevel = (level: LevelConfig) => {
-    setCurrentLevel(level);
-    setIsLevelSelectOpen(false);
-    setIsPaused(false);
-    setWinModalData(null);
-    setLoseModalData(null);
-    setStats({
-      score: 0,
-      shotsLeft: level.maxShots,
-      combo: 0,
-      maxCombo: 0,
-      level: level.level,
-      stars: 0,
-      boardOccupancy: 0.35,
-      gameStatus: 'PLAYING'
-    });
-    apiService.startSession(level.level);
-
-    const game = gameRef.current;
-    if (game && game.scene) {
-      const scene = game.scene.getScene('GameScene') as GameScene;
-      if (scene && scene.sys && scene.sys.settings.active && typeof scene.loadLevel === 'function') {
-        scene.loadLevel(level);
-        return;
-      }
-    }
-    eventBridge.emit(GAME_EVENTS.LOAD_LEVEL, level);
-  };
-
-  const handleNextLevel = () => {
-    const currentLvlNum = winModalData ? winModalData.level : currentLevel.level;
-    const nextIdx = LEVELS.findIndex(l => l.level === currentLvlNum) + 1;
-    const nextLvl = LEVELS[nextIdx] || LEVELS[0];
-    handleSelectLevel(nextLvl);
+  // Switch account / re-enter phone
+  const handleChangePhone = () => {
+    setIsQROpen(false);
+    setIsPhoneLoginOpen(true);
   };
 
   return (
     <div className="game-viewport">
+      {/* Game Canvas Container */}
       <div className="game-canvas-wrapper">
         {/* React Top HUD */}
         <HUD
@@ -256,8 +281,13 @@ export const GameShell: React.FC = () => {
           levelTitle={currentLevel.title}
           starThresholds={currentLevel.starThresholds}
           isMuted={isMuted}
+          playerPhone={playerPhone}
           onToggleMute={handleToggleMute}
           onPause={handlePause}
+          onOpenQR={() => {
+            setIsQROpen(true);
+            handlePause();
+          }}
         />
 
         {/* Phaser 3 Canvas Container */}
@@ -265,60 +295,109 @@ export const GameShell: React.FC = () => {
 
         {/* Debug Console Overlay */}
         <DebugOverlay stats={stats} levelConfig={currentLevel} />
-
-        {/* Pause Modal */}
-        {isPaused && (
-          <PauseModal
-            onResume={handleResume}
-            onRestart={handleRestartLevel}
-            onLevelSelect={() => {
-              setIsPaused(false);
-              setIsLevelSelectOpen(true);
-            }}
-            volume={volume}
-            onVolumeChange={handleVolumeChange}
-          />
-        )}
-
-        {/* Victory Modal */}
-        {winModalData && (
-          <VictoryModal
-            level={winModalData.level}
-            score={winModalData.score}
-            stars={winModalData.stars}
-            shotsRemaining={winModalData.shotsRemaining}
-            onNextLevel={handleNextLevel}
-            onReplay={handleRestartLevel}
-            onLevelSelect={() => {
-              setWinModalData(null);
-              setIsLevelSelectOpen(true);
-            }}
-          />
-        )}
-
-        {/* Game Over Modal */}
-        {loseModalData && (
-          <GameOverModal
-            level={currentLevel.level}
-            score={loseModalData.score}
-            reason={loseModalData.reason}
-            onRetry={handleRestartLevel}
-            onLevelSelect={() => {
-              setLoseModalData(null);
-              setIsLevelSelectOpen(true);
-            }}
-          />
-        )}
-
-        {/* Level Select Modal */}
-        {isLevelSelectOpen && (
-          <LevelSelect
-            currentLevel={currentLevel.level}
-            onSelectLevel={handleSelectLevel}
-            onClose={() => setIsLevelSelectOpen(false)}
-          />
-        )}
       </div>
+
+      {/* FULLSCREEN POPUP MODALS - RENDERED IN TRUE VIEWPORT CENTER */}
+
+      {/* STEP 2: Welcome / Splash Screen (Bấm / Chơi) */}
+      {isWelcomeOpen && (
+        <WelcomeScreen
+          onStartClick={handleWelcomeStart}
+          onOpenQR={() => {
+            setIsWelcomeOpen(false);
+            setIsQROpen(true);
+          }}
+        />
+      )}
+
+      {/* STEP 4: Phone Gate Modal (Nhập SĐT) */}
+      {isPhoneLoginOpen && (
+        <PhoneLoginModal
+          onSuccess={handlePhoneSuccess}
+          onClose={playerPhone ? () => {
+            setIsPhoneLoginOpen(false);
+            handleResume();
+          } : undefined}
+          initialPhone={playerPhone || ''}
+        />
+      )}
+
+      {/* STEP 5: Reward Notification Modal (Có thông báo thưởng + Confetti) */}
+      {isRewardModalOpen && (
+        <RewardModal
+          phone={playerPhone || ''}
+          onStartPlaying={handleStartPlayingAfterReward}
+        />
+      )}
+
+      {/* QR Code Sharing Modal */}
+      {isQROpen && (
+        <QRCodeModal
+          currentPhone={playerPhone || ''}
+          onClose={() => {
+            setIsQROpen(false);
+            if (!playerPhone) {
+              setIsWelcomeOpen(true);
+            } else {
+              handleResume();
+            }
+          }}
+          onChangePhone={handleChangePhone}
+        />
+      )}
+
+      {/* Pause Modal */}
+      {isPaused && !isWelcomeOpen && !isPhoneLoginOpen && !isRewardModalOpen && !isQROpen && (
+        <PauseModal
+          onResume={handleResume}
+          onRestart={handleRestartLevel}
+          onLevelSelect={() => {
+            setIsPaused(false);
+            setIsLevelSelectOpen(true);
+          }}
+          volume={volume}
+          onVolumeChange={handleVolumeChange}
+        />
+      )}
+
+      {/* Victory Modal */}
+      {winModalData && (
+        <VictoryModal
+          level={winModalData.level}
+          score={winModalData.score}
+          stars={winModalData.stars}
+          shotsRemaining={winModalData.shotsRemaining}
+          onNextLevel={handleNextLevel}
+          onReplay={handleRestartLevel}
+          onLevelSelect={() => {
+            setWinModalData(null);
+            setIsLevelSelectOpen(true);
+          }}
+        />
+      )}
+
+      {/* Game Over Modal */}
+      {loseModalData && (
+        <GameOverModal
+          level={currentLevel.level}
+          score={loseModalData.score}
+          reason={loseModalData.reason}
+          onRetry={handleRestartLevel}
+          onLevelSelect={() => {
+            setLoseModalData(null);
+            setIsLevelSelectOpen(true);
+          }}
+        />
+      )}
+
+      {/* Level Select Modal */}
+      {isLevelSelectOpen && (
+        <LevelSelect
+          currentLevel={currentLevel.level}
+          onSelectLevel={handleSelectLevel}
+          onClose={() => setIsLevelSelectOpen(false)}
+        />
+      )}
     </div>
   );
 };

@@ -131,13 +131,15 @@ export class GameScene extends Phaser.Scene {
     bgGraphics.fillStyle(0x0a0f1d, 0.85);
     bgGraphics.fillRoundedRect(LEFT_WALL_X, CEILING_Y, RIGHT_WALL_X - LEFT_WALL_X, DANGER_LINE_Y - CEILING_Y, 8);
 
-    // 2. Faint hexagonal honeycomb matrix nodes
+    // 2. Faint hexagonal honeycomb matrix nodes (only above danger line)
     for (let r = 0; r < 12; r++) {
       const cols = this.gridManager.getColsInRow(r);
       for (let c = 0; c < cols; c++) {
         const pt = this.gridManager.gridToPixel(r, c);
-        bgGraphics.lineStyle(1, 0x1e293b, 0.3);
-        bgGraphics.strokeCircle(pt.x, pt.y, BUBBLE_RADIUS - 4);
+        if (pt.y + BUBBLE_RADIUS <= DANGER_LINE_Y) {
+          bgGraphics.lineStyle(1, 0x1e293b, 0.3);
+          bgGraphics.strokeCircle(pt.x, pt.y, BUBBLE_RADIUS - 4);
+        }
       }
     }
 
@@ -159,9 +161,9 @@ export class GameScene extends Phaser.Scene {
 
     // 4. Industrial Metallic Top Ceiling Beam
     const ceilingGfx = this.add.graphics();
-    ceilingGfx.setDepth(6);
+    ceilingGfx.setDepth(12); // Render above bubbles so bubbles do not poke through hazard bar
     ceilingGfx.fillStyle(0x0f172a, 1);
-    ceilingGfx.fillRect(LEFT_WALL_X - 12, CEILING_Y - 22, (RIGHT_WALL_X - LEFT_WALL_X) + 24, 22);
+    ceilingGfx.fillRect(LEFT_WALL_X - 12, CEILING_Y - 24, (RIGHT_WALL_X - LEFT_WALL_X) + 24, 24);
 
     // Hazard chevrons on ceiling
     for (let x = LEFT_WALL_X; x < RIGHT_WALL_X; x += 30) {
@@ -169,15 +171,15 @@ export class GameScene extends Phaser.Scene {
       ceilingGfx.beginPath();
       ceilingGfx.moveTo(x, CEILING_Y - 4);
       ceilingGfx.lineTo(x + 10, CEILING_Y - 4);
-      ceilingGfx.lineTo(x + 20, CEILING_Y - 20);
-      ceilingGfx.lineTo(x + 10, CEILING_Y - 20);
+      ceilingGfx.lineTo(x + 20, CEILING_Y - 22);
+      ceilingGfx.lineTo(x + 10, CEILING_Y - 22);
       ceilingGfx.closePath();
       ceilingGfx.fill();
     }
 
     // Chrome beam border
     ceilingGfx.lineStyle(2, 0x64748b, 1);
-    ceilingGfx.strokeRect(LEFT_WALL_X - 12, CEILING_Y - 22, (RIGHT_WALL_X - LEFT_WALL_X) + 24, 22);
+    ceilingGfx.strokeRect(LEFT_WALL_X - 12, CEILING_Y - 24, (RIGHT_WALL_X - LEFT_WALL_X) + 24, 24);
 
     // 5. Danger Laser Perimeter Line with Glowing Warning
     const dangerGfx = this.add.graphics();
@@ -324,6 +326,11 @@ export class GameScene extends Phaser.Scene {
     eventBridge.on(GAME_EVENTS.RESTART_LEVEL, this.boundRestartHandler);
     eventBridge.on(GAME_EVENTS.LOAD_LEVEL, this.boundLoadLevelHandler);
     eventBridge.on(GAME_EVENTS.SWAP_BUBBLES, this.boundSwapHandler);
+    eventBridge.on(GAME_EVENTS.APPLY_WELCOME_BONUS, (data: { bonusShots?: number; bonusScore?: number }) => {
+      if (data?.bonusShots) this.shotsLeft += data.bonusShots;
+      if (data?.bonusScore) this.score += data.bonusScore;
+      this.emitStatsUpdate();
+    });
 
     this.events.once('shutdown', () => this.cleanupEventBridge());
     this.events.once('destroy', () => this.cleanupEventBridge());

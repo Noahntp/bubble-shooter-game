@@ -3,10 +3,12 @@ export interface GameSessionResponse {
   level: number;
   seed: number;
   serverTimestamp: number;
+  playerPhone?: string;
 }
 
 export interface FinishSessionPayload {
   sessionId: string;
+  playerPhone?: string;
   level: number;
   score: number;
   shotsRemaining: number;
@@ -22,6 +24,7 @@ export interface PlayerProgress {
 }
 
 const STORAGE_PROGRESS_KEY = 'bubble_game_player_progress';
+const STORAGE_PHONE_KEY = 'bubble_player_phone';
 
 export class GameApiService {
   private static instance: GameApiService;
@@ -33,6 +36,39 @@ export class GameApiService {
       GameApiService.instance = new GameApiService();
     }
     return GameApiService.instance;
+  }
+
+  /**
+   * Gets the stored player phone number.
+   */
+  public getPlayerPhone(): string | null {
+    try {
+      return localStorage.getItem(STORAGE_PHONE_KEY);
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Sets and saves the player phone number.
+   */
+  public setPlayerPhone(phone: string): void {
+    try {
+      localStorage.setItem(STORAGE_PHONE_KEY, phone.trim());
+    } catch {
+      // Storage catch
+    }
+  }
+
+  /**
+   * Clears current player phone.
+   */
+  public clearPlayerPhone(): void {
+    try {
+      localStorage.removeItem(STORAGE_PHONE_KEY);
+    } catch {
+      // Storage catch
+    }
   }
 
   /**
@@ -69,11 +105,13 @@ export class GameApiService {
    * Initializes a session (anti-cheat signed seed).
    */
   public async startSession(level: number): Promise<GameSessionResponse> {
+    const phone = this.getPlayerPhone() || undefined;
     const session: GameSessionResponse = {
       sessionId: `sess_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
       level,
       seed: Math.floor(Math.random() * 1000000),
-      serverTimestamp: Date.now()
+      serverTimestamp: Date.now(),
+      playerPhone: phone
     };
     this.currentSession = session;
     this.sessionStartTime = Date.now();
@@ -83,10 +121,12 @@ export class GameApiService {
   /**
    * Finishes session with anti-cheat checks.
    */
-  public async finishSession(payload: Omit<FinishSessionPayload, 'sessionId' | 'durationMs'>): Promise<{ verified: boolean }> {
+  public async finishSession(payload: Omit<FinishSessionPayload, 'sessionId' | 'durationMs' | 'playerPhone'>): Promise<{ verified: boolean }> {
     const durationMs = Date.now() - this.sessionStartTime;
+    const phone = this.getPlayerPhone() || undefined;
     const fullPayload: FinishSessionPayload = {
       ...payload,
+      playerPhone: phone,
       sessionId: this.currentSession?.sessionId || 'offline_session',
       durationMs
     };

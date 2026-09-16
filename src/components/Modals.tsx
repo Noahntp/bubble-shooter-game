@@ -1,14 +1,14 @@
 import React from 'react';
-import { Play, RotateCcw, Menu, Star, Award, AlertCircle, Volume2 } from 'lucide-react';
-import { audioManager } from '../audio/AudioManager';
+import { Play, RotateCcw, Menu, Trophy, AlertCircle, Volume2, Star } from 'lucide-react';
 
 interface VictoryModalProps {
   level: number;
   score: number;
   stars: number;
-  shotsRemaining: number;
+  shotsRemaining?: number;
   onNextLevel: () => void;
-  onReplay: () => void;
+  onReplay?: () => void;
+  onRetry?: () => void;
   onLevelSelect: () => void;
 }
 
@@ -19,77 +19,90 @@ export const VictoryModal: React.FC<VictoryModalProps> = ({
   shotsRemaining,
   onNextLevel,
   onReplay,
+  onRetry,
   onLevelSelect
 }) => {
+  const handleReplay = onReplay || onRetry || (() => {});
+
   return (
-    <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 animate-fadeIn">
-      <div className="glass-panel w-full max-w-sm p-6 text-center border-amber-500/30 shadow-2xl">
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-amber-500/20 text-amber-400 border border-amber-500/40 mb-3 shadow-lg shadow-amber-500/20">
-          <Award size={36} />
+    <div className="modal-backdrop-20">
+      {/* Ambient glow */}
+      <div className="absolute w-80 h-80 bg-gradient-to-tr from-amber-500/20 via-yellow-500/20 to-cyan-500/15 rounded-full blur-3xl pointer-events-none" />
+
+      {/* Spacious 20px Card */}
+      <div className="modal-card-20 border-amber-400/60 shadow-[0_0_40px_rgba(245,158,11,0.3),0_25px_60px_rgba(0,0,0,0.95)]">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-[2px] bg-gradient-to-r from-transparent via-amber-300 to-transparent" />
+
+        {/* Floating Trophy Icon */}
+        <div className="modal-icon-20 animate-float bg-gradient-to-tr from-yellow-300 via-amber-400 to-amber-500 text-slate-950">
+          <Trophy size={28} />
         </div>
 
-        <h2 className="text-3xl font-black font-heading text-white tracking-wide uppercase">
-          Chiến Thắng!
-        </h2>
-        <p className="text-sm text-slate-300 font-medium mb-4">
-          Hoàn Thành Màn {level}
-        </p>
-
-        {/* 3-Star Rating */}
-        <div className="flex justify-center items-center gap-3 my-4">
-          {[1, 2, 3].map(s => (
-            <div
-              key={s}
-              className={`transform transition-all duration-500 ${
-                s <= stars
-                  ? 'scale-110 text-amber-400 drop-shadow-[0_0_12px_rgba(251,191,36,0.8)]'
-                  : 'scale-90 text-slate-600'
-              }`}
-            >
-              <Star size={36} fill={s <= stars ? 'currentColor' : 'none'} strokeWidth={2} />
-            </div>
+        {/* Stars Display */}
+        <div className="flex items-center gap-2 mb-3">
+          {[1, 2, 3].map((starIndex) => (
+            <Star
+              key={starIndex}
+              size={28}
+              className={`${
+                starIndex <= stars
+                  ? 'text-yellow-400 fill-yellow-400 drop-shadow-[0_0_10px_rgba(250,204,21,0.7)]'
+                  : 'text-slate-600 fill-slate-800'
+              } transition-all`}
+            />
           ))}
         </div>
 
-        {/* Score Breakdown */}
-        <div className="bg-slate-900/60 rounded-xl p-3.5 my-4 border border-white/5 space-y-1.5 text-left">
-          <div className="flex justify-between text-xs text-slate-400">
-            <span>Thưởng bóng thừa (+150/lượt)</span>
-            <span className="text-cyan-400 font-semibold">+{shotsRemaining * 150}</span>
+        {/* Title */}
+        <h2 className="modal-title-20">
+          Màn {level} Hoàn Thành!
+        </h2>
+        <p className="modal-desc-20">
+          Bạn đã bắn hạ toàn bộ bóng xuất sắc!
+        </p>
+
+        {/* Score Breakdown Card - 20px margin */}
+        <div className="modal-banner-20 flex items-center justify-around py-3 px-4">
+          <div className="text-center">
+            <div className="text-[10px] text-amber-300 font-bold uppercase tracking-wider">Điểm màn này</div>
+            <div className="text-xl font-black text-white">{score.toLocaleString()}</div>
           </div>
-          <div className="flex justify-between text-base font-bold text-white pt-1 border-t border-white/10">
-            <span>Tổng Điểm</span>
-            <span className="text-xl font-heading text-amber-400 font-black">
-              {score.toLocaleString()}
-            </span>
+          <div className="w-[1px] h-7 bg-white/20" />
+          <div className="text-center">
+            <div className="text-[10px] text-cyan-300 font-bold uppercase tracking-wider">
+              {shotsRemaining !== undefined ? 'Bóng còn lại' : 'Xếp hạng'}
+            </div>
+            <div className="text-xl font-black text-cyan-300">
+              {shotsRemaining !== undefined ? `${shotsRemaining} quả` : `${stars} Sao`}
+            </div>
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex flex-col gap-2.5 mt-5">
+        {/* Equal Action Buttons (50px, 20px gap) */}
+        <div className="modal-btn-group-20 mb-0">
           <button
             onClick={onNextLevel}
-            className="arcade-btn arcade-btn-success w-full py-3 text-lg"
+            className="modal-btn-20 modal-btn-gold-20"
           >
-            <Play size={20} fill="currentColor" />
-            <span>Màn Tiếp Theo</span>
+            <Play size={18} fill="currentColor" />
+            <span>MÀN TIẾP THEO</span>
           </button>
-          <div className="flex gap-2">
-            <button
-              onClick={onReplay}
-              className="arcade-btn arcade-btn-secondary flex-1 py-2.5 text-sm"
-            >
-              <RotateCcw size={16} />
-              <span>Chơi Lại</span>
-            </button>
-            <button
-              onClick={onLevelSelect}
-              className="arcade-btn arcade-btn-secondary flex-1 py-2.5 text-sm"
-            >
-              <Menu size={16} />
-              <span>Chọn Màn</span>
-            </button>
-          </div>
+
+          <button
+            onClick={handleReplay}
+            className="modal-btn-20 modal-btn-secondary-20"
+          >
+            <RotateCcw size={18} />
+            <span>CHƠI LẠI MÀN NÀY</span>
+          </button>
+
+          <button
+            onClick={onLevelSelect}
+            className="modal-btn-20 modal-btn-secondary-20"
+          >
+            <Menu size={18} />
+            <span>DANH SÁCH MÀN</span>
+          </button>
         </div>
       </div>
     </div>
@@ -99,7 +112,7 @@ export const VictoryModal: React.FC<VictoryModalProps> = ({
 interface GameOverModalProps {
   level: number;
   score: number;
-  reason: string;
+  reason?: string;
   onRetry: () => void;
   onLevelSelect: () => void;
 }
@@ -107,47 +120,53 @@ interface GameOverModalProps {
 export const GameOverModal: React.FC<GameOverModalProps> = ({
   level,
   score,
-  reason,
+  reason = 'Hết bóng bắn!',
   onRetry,
   onLevelSelect
 }) => {
   return (
-    <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fadeIn">
-      <div className="glass-panel w-full max-w-sm p-6 text-center border-red-500/30 shadow-2xl">
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-red-500/20 text-red-400 border border-red-500/40 mb-3 shadow-lg shadow-red-500/20">
-          <AlertCircle size={36} />
+    <div className="modal-backdrop-20">
+      {/* Ambient glow */}
+      <div className="absolute w-80 h-80 bg-gradient-to-tr from-rose-500/20 via-red-600/15 to-purple-600/15 rounded-full blur-3xl pointer-events-none" />
+
+      {/* Spacious 20px Card */}
+      <div className="modal-card-20 border-rose-500/60 shadow-[0_0_40px_rgba(244,63,94,0.3),0_25px_60px_rgba(0,0,0,0.95)]">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-[2px] bg-gradient-to-r from-transparent via-rose-400 to-transparent" />
+
+        {/* Top Alert Icon */}
+        <div className="modal-icon-20 bg-gradient-to-tr from-rose-500 to-red-600 text-white shadow-[0_0_20px_rgba(244,63,94,0.6)]">
+          <AlertCircle size={28} />
         </div>
 
-        <h2 className="text-3xl font-black font-heading text-white tracking-wide uppercase">
-          Thua Cuộc
+        <h2 className="modal-title-20">
+          Chưa Hoàn Thành!
         </h2>
-        <p className="text-xs text-red-400 font-semibold tracking-wide uppercase mt-1 mb-3">
-          {reason}
+        <p className="modal-desc-20 text-rose-300">
+          {reason} (Màn {level})
         </p>
 
-        <div className="bg-slate-900/60 rounded-xl p-3.5 my-4 border border-white/5 text-center">
-          <div className="text-xs text-slate-400 uppercase tracking-wider font-semibold">
-            Điểm Đạt Được
-          </div>
-          <div className="text-2xl font-heading text-white font-black mt-1">
-            {score.toLocaleString()}
-          </div>
+        {/* Final Score Card - 20px margin */}
+        <div className="w-full bg-slate-950/80 border border-rose-500/30 rounded-2xl py-3 px-4 mb-5 text-center">
+          <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Điểm Đạt Được</div>
+          <div className="text-2xl font-black text-rose-400 mt-0.5">{score.toLocaleString()}</div>
         </div>
 
-        <div className="flex flex-col gap-2.5 mt-5">
+        {/* Equal Action Buttons (50px, 20px gap) */}
+        <div className="modal-btn-group-20 mb-0">
           <button
             onClick={onRetry}
-            className="arcade-btn arcade-btn-primary w-full py-3 text-lg"
+            className="modal-btn-20 text-white bg-gradient-to-r from-rose-500 to-red-600 border border-white/50 shadow-[0_4px_0_#9f1239,0_8px_20px_rgba(244,63,94,0.5)] active:translate-y-1"
           >
-            <RotateCcw size={20} />
-            <span>Thử Lại</span>
+            <RotateCcw size={18} />
+            <span>THỬ LẠI NGAY</span>
           </button>
+
           <button
             onClick={onLevelSelect}
-            className="arcade-btn arcade-btn-secondary w-full py-2.5 text-sm"
+            className="modal-btn-20 modal-btn-secondary-20"
           >
-            <Menu size={16} />
-            <span>Chọn Màn</span>
+            <Menu size={18} />
+            <span>CHỌN MÀN KHÁC</span>
           </button>
         </div>
       </div>
@@ -171,52 +190,66 @@ export const PauseModal: React.FC<PauseModalProps> = ({
   onVolumeChange
 }) => {
   return (
-    <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 animate-fadeIn">
-      <div className="glass-panel w-full max-w-xs p-6 text-center shadow-2xl">
-        <h2 className="text-2xl font-black font-heading text-white tracking-wide uppercase mb-4">
+    <div className="modal-backdrop-20">
+      {/* Ambient glow */}
+      <div className="absolute w-80 h-80 bg-gradient-to-tr from-cyan-500/20 via-blue-600/15 to-indigo-600/15 rounded-full blur-3xl pointer-events-none" />
+
+      {/* Spacious 20px Card */}
+      <div className="modal-card-20">
+        <div className="modal-top-beam-20" />
+
+        <div className="modal-icon-20">
+          <Play size={26} className="ml-0.5" />
+        </div>
+
+        <h2 className="modal-title-20">
           Tạm Dừng
         </h2>
+        <p className="modal-desc-20">
+          Game đang được tạm dừng
+        </p>
 
-        {/* Audio Volume Slider */}
-        <div className="bg-slate-900/60 rounded-xl p-3 mb-5 border border-white/5 text-left">
-          <div className="flex items-center justify-between text-xs text-slate-300 font-semibold mb-2">
-            <span className="flex items-center gap-1.5">
-              <Volume2 size={14} /> Âm Lượng
-            </span>
-            <span>{Math.round(volume * 100)}%</span>
-          </div>
+        {/* Volume Slider Bar - 20px margin */}
+        <div className="w-full bg-slate-900/90 border border-white/15 rounded-2xl p-3 mb-5 flex items-center gap-3">
+          <Volume2 size={18} className="text-cyan-400 shrink-0" />
           <input
             type="range"
             min="0"
             max="1"
             step="0.05"
             value={volume}
-            onChange={e => onVolumeChange(parseFloat(e.target.value))}
-            className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-cyan-400"
+            onChange={(e) => onVolumeChange(parseFloat(e.target.value))}
+            className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-cyan-400"
           />
+          <span className="text-xs font-mono font-bold text-cyan-300 w-10 text-right shrink-0">
+            {Math.round(volume * 100)}%
+          </span>
         </div>
 
-        <div className="flex flex-col gap-2.5">
+        {/* Equal Action Buttons (50px, 20px gap) */}
+        <div className="modal-btn-group-20 mb-0">
           <button
             onClick={onResume}
-            className="arcade-btn arcade-btn-primary w-full py-2.5 text-base"
+            className="modal-btn-20 modal-btn-primary-20"
           >
             <Play size={18} fill="currentColor" />
-            <span>Tiếp Tục</span>
+            <span>TIẾP TỤC CHƠI</span>
           </button>
+
           <button
             onClick={onRestart}
-            className="arcade-btn arcade-btn-secondary w-full py-2.5 text-sm"
+            className="modal-btn-20 modal-btn-secondary-20"
           >
-            <RotateCcw size={16} />
-            <span>Chơi Lại Màn</span>
+            <RotateCcw size={18} />
+            <span>CHƠI LẠI MÀN NÀY</span>
           </button>
+
           <button
             onClick={onLevelSelect}
-            className="arcade-btn arcade-btn-secondary w-full py-2.5 text-sm"
+            className="modal-btn-20 modal-btn-secondary-20"
           >
-            <Menu size={16} />
-            <span>Chọn Màn</span>
+            <Menu size={18} />
+            <span>DANH SÁCH MÀN</span>
           </button>
         </div>
       </div>

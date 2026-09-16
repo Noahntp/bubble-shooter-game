@@ -27,17 +27,20 @@ html, body, #root {
   background-color: var(--bg-dark);
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   color: var(--text-main);
+  touch-action: manipulation;
 }
 
-/* Master Game Container */
+/* Master Game Container - Solidly Fixed to True Viewport */
 .game-viewport {
-  position: relative;
-  width: 100%;
-  height: 100%;
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100dvh;
   display: flex;
   align-items: center;
   justify-content: center;
   background: radial-gradient(circle at 50% 25%, #172554 0%, #090d16 60%, #030712 100%);
+  overflow: hidden;
 }
 
 .game-canvas-wrapper {
@@ -51,6 +54,17 @@ html, body, #root {
   border-radius: 16px;
   overflow: hidden;
   background-color: #070a14;
+}
+
+/* Seamless Fullscreen on Mobile Phones */
+@media (max-width: 640px) {
+  .game-canvas-wrapper {
+    max-height: 100%;
+    height: 100%;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+  }
 }
 
 canvas {
@@ -67,14 +81,14 @@ canvas {
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--border-card);
-  border-radius: 16px;
+  border-radius: 20px;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
 }
 
-/* UI Typography */
+/* UI Typography - Clean normal spacing for Vietnamese text */
 h1, h2, h3, .font-heading {
   font-family: 'Outfit', sans-serif;
-  letter-spacing: -0.02em;
+  letter-spacing: normal;
 }
 
 /* Buttons & Micro-Interactions */
@@ -83,12 +97,11 @@ h1, h2, h3, .font-heading {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 12px 24px;
+  padding: 0 16px;
   font-family: 'Outfit', sans-serif;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: normal;
   color: #ffffff;
   background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
   border: 1px solid rgba(255, 255, 255, 0.2);
@@ -99,7 +112,7 @@ h1, h2, h3, .font-heading {
 }
 
 .arcade-btn:hover {
-  transform: scale(1.02);
+  transform: scale(1.01);
   filter: brightness(1.1);
   box-shadow: 0 6px 20px rgba(37, 99, 235, 0.6);
 }
@@ -110,23 +123,40 @@ h1, h2, h3, .font-heading {
 
 .arcade-btn-primary {
   background: linear-gradient(135deg, #00c6ff 0%, #0072ff 100%);
+  border: 1px solid rgba(255, 255, 255, 0.35);
   box-shadow: 0 4px 16px rgba(0, 198, 255, 0.45);
 }
 
 .arcade-btn-success {
   background: linear-gradient(135deg, #00e676 0%, #00a854 100%);
+  border: 1px solid rgba(255, 255, 255, 0.35);
   box-shadow: 0 4px 16px rgba(0, 230, 118, 0.45);
 }
 
+.arcade-btn-gold {
+  background: linear-gradient(135deg, #fde047 0%, #f59e0b 50%, #d97706 100%);
+  color: #0f172a;
+  font-weight: 800;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 4px 20px rgba(245, 158, 11, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.7);
+}
+
+.arcade-btn-gold:hover {
+  transform: scale(1.01);
+  filter: brightness(1.08);
+  box-shadow: 0 6px 25px rgba(245, 158, 11, 0.75), inset 0 1px 1px rgba(255, 255, 255, 0.9);
+}
+
 .arcade-btn-secondary {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #e2e8f0;
   box-shadow: none;
 }
 
 .arcade-btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.18);
-  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
 }
 
 .icon-btn {
@@ -163,10 +193,312 @@ h1, h2, h3, .font-heading {
   animation: pulseGlow 1.8s infinite ease-in-out;
 }
 
-/* Score Popup Numbers */
-.score-badge {
-  background: rgba(15, 23, 42, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 9999px;
-  padding: 6px 14px;
+@keyframes floatAnim {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+.animate-float {
+  animation: floatAnim 2.4s infinite ease-in-out;
+}
+
+/* ==========================================================================
+   EXPLICIT 20px MARGIN & PADDING MODAL SYSTEM
+   Guaranteed 100% deterministic spacing across all mobile & desktop screens
+   ========================================================================== */
+
+.modal-backdrop-20 {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 9999 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 20px !important;
+  background-color: rgba(0, 0, 0, 0.85) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  user-select: none !important;
+}
+
+.modal-card-20 {
+  position: relative !important;
+  width: 100% !important;
+  max-width: 350px !important;
+  padding: 20px !important;
+  border-radius: 24px !important;
+  background: linear-gradient(180deg, #162244 0%, #0e172d 55%, #070c18 100%) !important;
+  border: 2px solid rgba(0, 229, 255, 0.6) !important;
+  box-shadow: 0 0 35px rgba(0, 229, 255, 0.25), 0 20px 50px rgba(0, 0, 0, 0.95) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  text-align: center !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+}
+
+.modal-top-beam-20 {
+  position: absolute !important;
+  top: 0 !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  width: 75% !important;
+  height: 2px !important;
+  background: linear-gradient(90deg, transparent, #67e8f9, transparent) !important;
+}
+
+.modal-icon-20 {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 48px !important;
+  height: 48px !important;
+  border-radius: 16px !important;
+  background: linear-gradient(135deg, #22d3ee 0%, #3b82f6 50%, #4f46e5 100%) !important;
+  border: 2px solid rgba(255, 255, 255, 0.6) !important;
+  box-shadow: 0 0 20px rgba(0, 229, 255, 0.5), 0 6px 14px rgba(0, 0, 0, 0.4) !important;
+  color: #ffffff !important;
+  margin-top: 2px !important;
+  margin-bottom: 12px !important;
+}
+
+.modal-badge-20 {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  background: rgba(6, 182, 212, 0.18) !important;
+  border: 1px solid rgba(34, 211, 238, 0.5) !important;
+  color: #67e8f9 !important;
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.08em !important;
+  padding: 4px 12px !important;
+  border-radius: 9999px !important;
+  margin-bottom: 8px !important;
+}
+
+.modal-title-20 {
+  font-family: 'Outfit', sans-serif !important;
+  font-size: 22px !important;
+  font-weight: 900 !important;
+  color: #ffffff !important;
+  line-height: 1.2 !important;
+  letter-spacing: 0.02em !important;
+  margin-bottom: 4px !important;
+  text-shadow: 0 2px 10px rgba(0, 229, 255, 0.4) !important;
+}
+
+.modal-desc-20 {
+  font-size: 13px !important;
+  color: #cbd5e1 !important;
+  font-weight: 500 !important;
+  line-height: 1.3 !important;
+  margin-bottom: 14px !important;
+}
+
+.modal-banner-20 {
+  width: 100% !important;
+  background: linear-gradient(90deg, rgba(245, 158, 11, 0.2) 0%, rgba(234, 179, 8, 0.25) 50%, rgba(245, 158, 11, 0.2) 100%) !important;
+  border: 1px solid rgba(251, 191, 36, 0.6) !important;
+  border-radius: 14px !important;
+  padding: 10px 14px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 10px !important;
+  margin-bottom: 14px !important;
+  box-shadow: 0 0 15px rgba(245, 158, 11, 0.2) !important;
+  box-sizing: border-box !important;
+  cursor: pointer !important;
+}
+
+.modal-input-wrapper-20 {
+  width: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  background: rgba(15, 23, 42, 0.95) !important;
+  border: 1.5px solid rgba(0, 229, 255, 0.5) !important;
+  border-radius: 16px !important;
+  height: 48px !important;
+  padding: 0 !important;
+  margin-bottom: 6px !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+  transition: all 0.2s ease !important;
+}
+
+.modal-input-wrapper-20:focus-within {
+  border-color: #00e5ff !important;
+  box-shadow: 0 0 15px rgba(0, 229, 255, 0.35) !important;
+}
+
+.modal-input-20 {
+  flex: 1 !important;
+  height: 100% !important;
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  color: #ffffff !important;
+  font-family: 'Outfit', sans-serif !important;
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.05em !important;
+  padding: 0 12px !important;
+}
+
+.modal-input-20::placeholder {
+  color: #64748b !important;
+  font-weight: 500 !important;
+}
+
+.modal-btn-group-20 {
+  width: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important; /* Harmonious 10px gap between action buttons */
+  margin-bottom: 0 !important; /* Zero bottom margin so padding-bottom 20px applies cleanly */
+}
+
+.modal-btn-20 {
+  width: 100% !important;
+  height: 48px !important;
+  border-radius: 14px !important;
+  font-family: 'Outfit', sans-serif !important;
+  font-size: 13.5px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.04em !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  cursor: pointer !important;
+  box-sizing: border-box !important;
+  transition: transform 0.1s ease, filter 0.15s ease !important;
+}
+
+.modal-btn-primary-20 {
+  color: #ffffff !important;
+  background: linear-gradient(90deg, #22d3ee 0%, #3b82f6 50%, #4f46e5 100%) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.6) !important;
+  box-shadow: 0 3px 0 #1d4ed8, 0 6px 18px rgba(0, 198, 255, 0.4) !important;
+}
+
+.modal-btn-primary-20:active {
+  transform: translateY(2px) !important;
+  box-shadow: 0 1px 0 #1d4ed8, 0 3px 8px rgba(0, 198, 255, 0.3) !important;
+}
+
+.modal-btn-secondary-20 {
+  color: #67e8f9 !important;
+  background: rgba(30, 41, 59, 0.85) !important;
+  border: 1.5px solid rgba(34, 211, 238, 0.5) !important;
+  box-shadow: 0 0 12px rgba(0, 229, 255, 0.12) !important;
+}
+
+.modal-btn-secondary-20:active {
+  transform: translateY(2px) !important;
+}
+
+.modal-btn-gold-20 {
+  color: #0f172a !important;
+  background: linear-gradient(135deg, #fde047 0%, #f59e0b 50%, #d97706 100%) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.8) !important;
+  box-shadow: 0 3px 0 #b45309, 0 6px 20px rgba(245, 158, 11, 0.45) !important;
+}
+
+.modal-btn-gold-20:active {
+  transform: translateY(2px) !important;
+  box-shadow: 0 1px 0 #b45309 !important;
+}
+
+.modal-footer-20 {
+  margin-top: 14px !important;
+  margin-bottom: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  font-size: 12px !important;
+  color: #94a3b8 !important;
+  font-weight: 500 !important;
+}
+
+/* ==========================================================================
+   PERFECTLY ALIGNED PHONE INPUT COMPONENT
+   Guarantees flag, +84, and placeholder/input are 100% on the exact same axis
+   ========================================================================== */
+
+.phone-input-row {
+  display: flex !important;
+  align-items: center !important;
+  width: 100% !important;
+  height: 50px !important;
+  background: rgba(10, 15, 28, 0.95) !important;
+  border: 1.5px solid rgba(0, 229, 255, 0.5) !important;
+  border-radius: 16px !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+  transition: all 0.2s ease !important;
+}
+
+.phone-input-row:focus-within {
+  border-color: #00e5ff !important;
+  box-shadow: 0 0 16px rgba(0, 229, 255, 0.35) !important;
+}
+
+.phone-prefix-box {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  height: 100% !important;
+  padding-left: 15px !important;
+  padding-right: 14px !important;
+  background: rgba(15, 23, 42, 0.85) !important;
+  border-right: 1.5px solid rgba(255, 255, 255, 0.18) !important;
+  flex-shrink: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.phone-flag-svg {
+  width: 22px !important;
+  height: 15px !important;
+  border-radius: 3px !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5) !important;
+  display: block !important;
+  flex-shrink: 0 !important;
+}
+
+.phone-prefix-text {
+  font-family: 'Outfit', sans-serif !important;
+  font-size: 15px !important;
+  font-weight: 800 !important;
+  color: #fbbf24 !important; /* amber-400 */
+  line-height: 1 !important;
+  display: flex !important;
+  align-items: center !important;
+  letter-spacing: 0.02em !important;
+}
+
+.phone-input-field {
+  flex: 1 !important;
+  height: 100% !important;
+  padding: 0 14px !important;
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  font-family: 'Outfit', sans-serif !important;
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  color: #ffffff !important;
+  letter-spacing: 0.08em !important;
+  line-height: 50px !important;
+  box-sizing: border-box !important;
+}
+
+.phone-input-field::placeholder {
+  color: #64748b !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.06em !important;
 }

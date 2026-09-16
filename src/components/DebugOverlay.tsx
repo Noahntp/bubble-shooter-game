@@ -42,22 +42,14 @@ export const DebugOverlay: React.FC<DebugOverlayProps> = ({ stats, levelConfig }
   }, []);
 
   if (!visible) {
-    return (
-      <button
-        onClick={() => setVisible(true)}
-        className="absolute bottom-2 right-2 z-40 text-[10px] opacity-25 hover:opacity-100 bg-black/60 text-white px-1.5 py-0.5 rounded border border-white/10"
-        title="Toggle Debug Mode (`)"
-      >
-        DEV
-      </button>
-    );
+    return null; // Hidden by default; press ` or ~ to toggle
   }
 
   return (
     <div className="absolute top-14 right-2 z-40 glass-panel p-3 text-[11px] font-mono text-slate-200 border-cyan-500/30 max-w-[200px] pointer-events-auto shadow-2xl">
       <div className="flex justify-between items-center pb-1 border-b border-white/10 mb-1.5">
         <span className="font-bold text-cyan-400">DEBUG CONSOLE</span>
-        <button onClick={() => setVisible(false)} className="text-slate-400 hover:text-white">✕</button>
+        <button onClick={() => setVisible(false)} className="text-slate-400 hover:text-white cursor-pointer">✕</button>
       </div>
 
       <div className="space-y-1">
