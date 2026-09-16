@@ -1,5 +1,5 @@
 import React from 'react';
-import { Star, Lock, X } from 'lucide-react';
+import { Star, Lock, X, Play, Trophy } from 'lucide-react';
 import { LevelConfig } from '../types/game';
 import { LEVELS } from '../levels/levelData';
 import { apiService, PlayerProgress } from '../services/api';
@@ -16,31 +16,52 @@ export const LevelSelect: React.FC<LevelSelectProps> = ({
   onClose
 }) => {
   const progress: PlayerProgress = apiService.getLocalProgress();
-  const unlockedLevel = progress.unlockedLevel || 1;
+  const unlockedLevel = Math.max(1, progress.unlockedLevel || 1);
+
+  // Total stars collected across all levels
+  const totalStars = Object.values(progress.stars || {}).reduce((acc, s) => acc + (s || 0), 0);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 select-none animate-fadeIn">
-      {/* Centered Modal Card */}
-      <div className="relative w-full max-w-[330px] max-h-[85vh] rounded-3xl bg-gradient-to-b from-[#15203b] via-[#0e162d] to-[#070c18] border-2 border-cyan-400/45 p-4 text-center shadow-[0_20px_50px_rgba(0,0,0,0.95),0_0_35px_rgba(0,229,255,0.25)] flex flex-col">
-        {/* Subtle Top Cyan Highlight */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-2/3 h-[1.5px] bg-gradient-to-r from-transparent via-cyan-300 to-transparent" />
+    <div className="modal-backdrop-20">
+      {/* Ambient background glow */}
+      <div className="absolute w-80 h-80 bg-gradient-to-tr from-cyan-500/20 via-blue-600/15 to-purple-600/15 rounded-full blur-3xl pointer-events-none" />
 
-        {/* Header */}
-        <div className="flex items-center justify-between pb-2.5 border-b border-white/10 mb-3 shrink-0">
-          <h2 className="text-lg font-black font-heading text-white tracking-wide">
-            Chọn Màn Chơi
-          </h2>
+      {/* Standard 20px Card - Exactly matching WelcomeScreen, PhoneLogin & Pause modals */}
+      <div className="modal-card-20 max-w-[355px] max-h-[78dvh]">
+        {/* Top Highlight Beam */}
+        <div className="modal-top-beam-20" />
+
+        {/* Modal Header */}
+        <div className="w-full flex items-start justify-between pb-3 border-b border-white/10 mb-[14px] shrink-0">
+          <div className="text-left">
+            <div className="modal-badge-20 mb-1">
+              <Trophy size={11} className="text-amber-400" />
+              <span>BẢN ĐỒ MÀN CHƠI</span>
+            </div>
+            <h2 className="modal-title-20 text-left mb-0.5">
+              Chọn Màn Chơi
+            </h2>
+            <div className="flex items-center gap-2 text-[11px] text-slate-300 font-medium">
+              <span>Đã mở: <b className="text-cyan-300 font-bold">{unlockedLevel}/10</b> màn</span>
+              <span className="text-slate-500">•</span>
+              <span className="flex items-center gap-1 text-amber-300 font-bold">
+                <Star size={11} className="fill-amber-400 text-amber-400" /> {totalStars}/30 Sao
+              </span>
+            </div>
+          </div>
+
+          {/* Close Touch Button */}
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-white/10 transition-colors cursor-pointer"
+            className="w-8 h-8 rounded-xl flex items-center justify-center bg-slate-800/90 hover:bg-slate-700/90 active:scale-90 border border-white/15 text-slate-300 hover:text-white transition-all cursor-pointer shrink-0 shadow-sm"
             aria-label="Đóng"
           >
-            <X size={18} />
+            <X size={16} />
           </button>
         </div>
 
-        {/* Level Grid - Scrollable if many levels */}
-        <div className="grid grid-cols-2 gap-2.5 overflow-y-auto pr-1 pb-1">
+        {/* Spacious 1-Column Stage List - 20px padding & margins */}
+        <div className="w-full flex flex-col gap-2 overflow-y-auto pr-1 pb-1 flex-1 min-h-0 mb-[14px] scrollbar-thin">
           {LEVELS.map(lvl => {
             const isUnlocked = lvl.level <= unlockedLevel;
             const starsEarned = progress.stars[lvl.level] || 0;
@@ -48,52 +69,104 @@ export const LevelSelect: React.FC<LevelSelectProps> = ({
             const isCurrent = lvl.level === currentLevel;
 
             return (
-              <div
+              <button
                 key={lvl.level}
                 onClick={() => isUnlocked && onSelectLevel(lvl)}
-                className={`p-3 rounded-2xl flex flex-col justify-between transition-all border ${
-                  isUnlocked
-                    ? 'cursor-pointer bg-slate-900/90 border-white/10 hover:border-cyan-400/60 hover:bg-slate-800/90 active:scale-95'
-                    : 'opacity-40 cursor-not-allowed bg-slate-950/40 border-white/5'
-                } ${isCurrent ? 'ring-2 ring-cyan-400 bg-cyan-950/40 border-cyan-400/80' : ''}`}
+                disabled={!isUnlocked}
+                className={`w-full p-2.5 rounded-xl flex items-center justify-between text-left transition-all border box-border ${
+                  isCurrent
+                    ? 'bg-gradient-to-r from-cyan-950/90 via-slate-900 to-cyan-950/70 border-2 border-cyan-400 shadow-[0_0_15px_rgba(0,229,255,0.35)] cursor-pointer active:scale-98'
+                    : isUnlocked
+                    ? 'bg-slate-900/90 border-cyan-500/25 hover:border-cyan-400/60 hover:bg-slate-800/90 cursor-pointer active:scale-98 shadow-sm'
+                    : 'bg-slate-900/40 border-white/5 opacity-60 cursor-not-allowed'
+                }`}
               >
-                <div className="flex items-start justify-between">
-                  <div>
-                    <span className="text-[10px] font-black text-cyan-300 uppercase tracking-wider">
-                      Màn {lvl.level}
-                    </span>
-                    <h3 className="text-xs font-bold text-white leading-tight mt-0.5 truncate max-w-[90px]">
-                      {lvl.title}
-                    </h3>
+                {/* Left: Stage Number Badge + Title */}
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div
+                    className={`w-9 h-9 rounded-lg flex items-center justify-center font-heading font-black text-xs shrink-0 border ${
+                      isCurrent
+                        ? 'bg-gradient-to-tr from-cyan-400 to-blue-500 text-slate-950 border-white/60 shadow-md shadow-cyan-400/40'
+                        : isUnlocked
+                        ? 'bg-cyan-500/15 text-cyan-300 border-cyan-400/30'
+                        : 'bg-slate-800/80 text-slate-400 border-white/5'
+                    }`}
+                  >
+                    {!isUnlocked ? <Lock size={13} className="text-amber-400/80" /> : lvl.level}
                   </div>
-                  {!isUnlocked && (
-                    <div className="text-slate-500">
-                      <Lock size={13} />
+
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <h3 className={`text-xs font-bold truncate ${isUnlocked ? 'text-white' : 'text-slate-300'}`}>
+                        {lvl.title}
+                      </h3>
+                      {isCurrent && (
+                        <span className="text-[9px] font-extrabold uppercase tracking-wider text-cyan-300 bg-cyan-500/20 border border-cyan-400/40 px-1.5 py-0.2 rounded-full animate-pulse shrink-0">
+                          Đang chơi
+                        </span>
+                      )}
                     </div>
-                  )}
+                    <div className="flex items-center gap-2 mt-0.5 text-[10px] text-slate-400">
+                      {highScore > 0 ? (
+                        <span className="text-amber-300 font-mono font-bold">
+                          Kỷ lục: {highScore.toLocaleString()} đ
+                        </span>
+                      ) : isUnlocked ? (
+                        <span className="text-cyan-400/80 font-medium">
+                          Mục tiêu: {lvl.targetScore.toLocaleString()} đ
+                        </span>
+                      ) : (
+                        <span className="text-slate-400 font-medium">
+                          Cần qua Màn {lvl.level - 1}
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </div>
 
-                {/* Stars & High Score */}
-                <div className="mt-2.5 pt-1.5 border-t border-white/5 flex items-center justify-between">
+                {/* Right: Stars + Play Indicator */}
+                <div className="flex items-center gap-2 shrink-0 ml-2">
                   <div className="flex gap-0.5">
                     {[1, 2, 3].map(s => (
                       <Star
                         key={s}
                         size={11}
-                        className={s <= starsEarned ? 'text-amber-400' : 'text-slate-700'}
-                        fill={s <= starsEarned ? 'currentColor' : 'none'}
+                        className={
+                          s <= starsEarned
+                            ? 'text-amber-400 fill-amber-400 drop-shadow-[0_0_4px_rgba(251,191,36,0.9)]'
+                            : isUnlocked
+                            ? 'text-slate-600 fill-slate-800/80'
+                            : 'text-slate-700 fill-slate-800/40'
+                        }
                       />
                     ))}
                   </div>
-                  {highScore > 0 && (
-                    <span className="text-[9px] font-semibold text-slate-400">
-                      {highScore.toLocaleString()}
-                    </span>
+
+                  {isUnlocked && (
+                    <div
+                      className={`w-6 h-6 rounded-md flex items-center justify-center border text-[10px] font-bold ${
+                        isCurrent
+                          ? 'bg-cyan-400 text-slate-950 border-white/60 shadow-sm shadow-cyan-400/50'
+                          : 'bg-slate-800/90 text-cyan-300 border-cyan-500/30'
+                      }`}
+                    >
+                      <Play size={10} fill="currentColor" />
+                    </div>
                   )}
                 </div>
-              </div>
+              </button>
             );
           })}
+        </div>
+
+        {/* Bottom Button */}
+        <div className="w-full shrink-0">
+          <button
+            onClick={onClose}
+            className="modal-btn-20 modal-btn-secondary-20"
+          >
+            <span>QUAY LẠI BÀN CHƠI</span>
+          </button>
         </div>
       </div>
     </div>
