@@ -55,10 +55,10 @@ export const VictoryModal: React.FC<VictoryModalProps> = ({
 
         {/* Title */}
         <h2 className="modal-title-20">
-          Màn {level} Hoàn Thành!
+          Chinh Phục Hải Trình!
         </h2>
         <p className="modal-desc-20">
-          Bạn đã bắn hạ toàn bộ bóng xuất sắc!
+          Bạn đã giải phóng toàn bộ ngọc trai thủy cung màn {level}!
         </p>
 
         {/* Score Breakdown Card - 20px margin */}
@@ -70,10 +70,10 @@ export const VictoryModal: React.FC<VictoryModalProps> = ({
           <div className="w-[1px] h-7 bg-white/20" />
           <div className="text-center">
             <div className="text-[10px] text-cyan-300 font-bold uppercase tracking-wider">
-              {shotsRemaining !== undefined ? 'Bóng còn lại' : 'Xếp hạng'}
+              {shotsRemaining !== undefined ? 'Ngọc còn lại' : 'Xếp hạng'}
             </div>
             <div className="text-xl font-black text-cyan-300">
-              {shotsRemaining !== undefined ? `${shotsRemaining} quả` : `${stars} Sao`}
+              {shotsRemaining !== undefined ? `${shotsRemaining} viên` : `${stars} Sao`}
             </div>
           </div>
         </div>
@@ -82,10 +82,11 @@ export const VictoryModal: React.FC<VictoryModalProps> = ({
         <div className="modal-btn-group-20 mb-0">
           <button
             onClick={onNextLevel}
-            className="modal-btn-20 modal-btn-gold-20"
+            className="modal-btn-20 modal-btn-gold-20 relative overflow-hidden"
           >
+            <div className="shimmer-sweep" />
             <Play size={18} fill="currentColor" />
-            <span>MÀN TIẾP THEO</span>
+            <span>LẶN TIẾP MÀN SAU</span>
           </button>
 
           <button
@@ -93,7 +94,7 @@ export const VictoryModal: React.FC<VictoryModalProps> = ({
             className="modal-btn-20 modal-btn-secondary-20"
           >
             <RotateCcw size={18} />
-            <span>CHƠI LẠI MÀN NÀY</span>
+            <span>LẶN LẠI MÀN NÀY</span>
           </button>
 
           <button
@@ -101,7 +102,7 @@ export const VictoryModal: React.FC<VictoryModalProps> = ({
             className="modal-btn-20 modal-btn-secondary-20"
           >
             <Menu size={18} />
-            <span>DANH SÁCH MÀN</span>
+            <span>BẢN ĐỒ THỦY CUNG</span>
           </button>
         </div>
       </div>
@@ -139,10 +140,10 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
         </div>
 
         <h2 className="modal-title-20">
-          Chưa Hoàn Thành!
+          Thủy Triều Dâng Cao!
         </h2>
         <p className="modal-desc-20 text-rose-300">
-          {reason} (Màn {level})
+          {reason === 'Hết bóng bắn!' ? 'Hết ngọc thủy cung để bắn!' : reason} (Màn {level})
         </p>
 
         {/* Final Score Card - 20px margin */}
@@ -155,10 +156,11 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
         <div className="modal-btn-group-20 mb-0">
           <button
             onClick={onRetry}
-            className="modal-btn-20 text-white bg-gradient-to-r from-rose-500 to-red-600 border border-white/50 shadow-[0_4px_0_#9f1239,0_8px_20px_rgba(244,63,94,0.5)] active:translate-y-1"
+            className="modal-btn-20 text-white bg-gradient-to-r from-rose-500 to-red-600 border border-white/50 shadow-[0_4px_0_#9f1239,0_8px_20px_rgba(244,63,94,0.5)] active:translate-y-1 relative overflow-hidden"
           >
+            <div className="shimmer-sweep" />
             <RotateCcw size={18} />
-            <span>THỬ LẠI NGAY</span>
+            <span>LẶN BIỂN LẦN NỮA</span>
           </button>
 
           <button
@@ -166,7 +168,7 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
             className="modal-btn-20 modal-btn-secondary-20"
           >
             <Menu size={18} />
-            <span>CHỌN MÀN KHÁC</span>
+            <span>BẢN ĐỒ THỦY CUNG</span>
           </button>
         </div>
       </div>
@@ -203,10 +205,10 @@ export const PauseModal: React.FC<PauseModalProps> = ({
         </div>
 
         <h2 className="modal-title-20">
-          Tạm Dừng
+          Tạm Dừng Thám Hiểm
         </h2>
         <p className="modal-desc-20">
-          Game đang được tạm dừng
+          Hành trình thủy cung đang được tạm dừng
         </p>
 
         {/* Volume Slider Bar - 20px margin */}
@@ -233,7 +235,7 @@ export const PauseModal: React.FC<PauseModalProps> = ({
             className="modal-btn-20 modal-btn-primary-20"
           >
             <Play size={18} fill="currentColor" />
-            <span>TIẾP TỤC CHƠI</span>
+            <span>TIẾP TỤC LẶN BIỂN</span>
           </button>
 
           <button
@@ -241,7 +243,7 @@ export const PauseModal: React.FC<PauseModalProps> = ({
             className="modal-btn-20 modal-btn-secondary-20"
           >
             <RotateCcw size={18} />
-            <span>CHƠI LẠI MÀN NÀY</span>
+            <span>LẶN LẠI MÀN NÀY</span>
           </button>
 
           <button
@@ -249,7 +251,7 @@ export const PauseModal: React.FC<PauseModalProps> = ({
             className="modal-btn-20 modal-btn-secondary-20"
           >
             <Menu size={18} />
-            <span>DANH SÁCH MÀN</span>
+            <span>BẢN ĐỒ THỦY CUNG</span>
           </button>
         </div>
       </div>

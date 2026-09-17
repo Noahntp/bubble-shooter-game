@@ -3,6 +3,10 @@ export type SoundEvent =
   | 'bubble_hit'
   | 'bubble_attach'
   | 'bubble_pop'
+  | 'bubble_bounce'
+  | 'shield_crack'
+  | 'boss_hit'
+  | 'boss_defeat'
   | 'combo'
   | 'bonus'
   | 'bomb'
@@ -137,19 +141,98 @@ export class AudioManager {
         case 'bubble_pop': {
           const osc = this.ctx.createOscillator();
           const gain = this.ctx.createGain();
-          // Pitch variation based on extraParam or random
-          const pitch = extraParam ? 400 + extraParam * 50 : 520 + Math.random() * 80;
+          // Pentatonic musical scale to prevent ear fatigue during chains: C5, D5, E5, G5, A5, C6
+          const pentatonic = [523.25, 587.33, 659.25, 783.99, 880.00, 1046.50];
+          const pitch = extraParam !== undefined
+            ? pentatonic[Math.abs(extraParam) % pentatonic.length]
+            : 520 + Math.random() * 80;
+
           osc.type = 'sine';
           osc.frequency.setValueAtTime(pitch, now);
-          osc.frequency.exponentialRampToValueAtTime(pitch * 2.2, now + 0.08);
+          osc.frequency.exponentialRampToValueAtTime(pitch * 1.8, now + 0.08);
 
-          gain.gain.setValueAtTime(0.45, now);
+          gain.gain.setValueAtTime(0.42, now);
           gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
 
           osc.connect(gain);
           gain.connect(this.masterGain);
           osc.start(now);
           osc.stop(now + 0.1);
+          break;
+        }
+
+        case 'bubble_bounce': {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(320, now);
+          osc.frequency.exponentialRampToValueAtTime(460, now + 0.06);
+
+          gain.gain.setValueAtTime(0.2, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.07);
+
+          osc.connect(gain);
+          gain.connect(this.masterGain);
+          osc.start(now);
+          osc.stop(now + 0.08);
+          break;
+        }
+
+        case 'shield_crack': {
+          // Sharp shell crack sound
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(800, now);
+          osc.frequency.exponentialRampToValueAtTime(200, now + 0.12);
+
+          gain.gain.setValueAtTime(0.35, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+
+          osc.connect(gain);
+          gain.connect(this.masterGain);
+          osc.start(now);
+          osc.stop(now + 0.13);
+          break;
+        }
+
+        case 'boss_hit': {
+          // Heavy resonant underwater impact
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(160, now);
+          osc.frequency.exponentialRampToValueAtTime(60, now + 0.25);
+
+          gain.gain.setValueAtTime(0.6, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+
+          osc.connect(gain);
+          gain.connect(this.masterGain);
+          osc.start(now);
+          osc.stop(now + 0.26);
+          break;
+        }
+
+        case 'boss_defeat': {
+          // Heroic underwater surge crescendo
+          [220, 330, 440, 660, 880].forEach((f, idx) => {
+            if (!this.ctx || !this.masterGain) return;
+            const t = now + idx * 0.08;
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(f, t);
+            osc.frequency.exponentialRampToValueAtTime(f * 1.5, t + 0.35);
+
+            gain.gain.setValueAtTime(0.4, t);
+            gain.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+
+            osc.connect(gain);
+            gain.connect(this.masterGain);
+            osc.start(t);
+            osc.stop(t + 0.36);
+          });
           break;
         }
 

@@ -10,12 +10,15 @@ export interface TurnResolutionResult {
   floatingBubbles: BubbleEntity[];
   frozenBubbles: BubbleEntity[];
   spawnedBubbles: { row: number; col: number; color: BubbleColor }[];
+  crackedTurtles: BubbleEntity[];
+  bossHit?: { boss: BubbleEntity; hpRemaining: number; defeated: boolean };
   scoreGained: number;
   comboLevel: number;
   multiplier: number;
   popups: ScorePopupData[];
   screenShake: boolean;
   lightningRows: number[];
+  squidColumns: number[];
   triggeredBombPositions: { x: number; y: number }[];
 }
 
@@ -48,26 +51,37 @@ export class EffectResolver {
 
   /**
    * Deterministically resolves all effects following priority order:
-   * 1. MATCH ➔ 2. BOMB ➔ 3. LIGHTNING ➔ 4. RAINBOW ➔ 5. BONUS
-   * ➔ 6. FREEZE ➔ 7. CURSE ➔ 8. TRAP ➔ 9. FLOATING ➔ 10. SCORE
+   * 1. MATCH ➔ 2. CRAB/BOMB ➔ 3. SQUID/LIGHTNING ➔ 4. OCTOPUS/CHAIN ➔ 5. JELLYFISH
+   * ➔ 6. STARFISH ➔ 7. TURTLE SHIELD ➔ 8. SHARK BOSS ➔ 9. FLOATING ➔ 10. SCORE
    */
   public resolveTurn(attachedBubble: BubbleEntity): TurnResolutionResult {
     const bubblesToPop = new Map<string, BubbleEntity>();
     const frozenBubbles: BubbleEntity[] = [];
     const spawnedBubbles: { row: number; col: number; color: BubbleColor }[] = [];
+    const crackedTurtles: BubbleEntity[] = [];
     const popups: ScorePopupData[] = [];
     const triggeredBombPositions: { x: number; y: number }[] = [];
     const lightningRows: number[] = [];
+    const squidColumns: number[] = [];
+    let bossHit: { boss: BubbleEntity; hpRemaining: number; defeated: boolean } | undefined;
 
     let screenShake = false;
     let baseScore = 0;
 
     // --- STEP 1: DIRECT SPECIAL BUBBLE SHOT OR MATCH ---
-    if (attachedBubble.type === 'BOMB') {
+    if (attachedBubble.type === 'BOMB' || attachedBubble.type === 'CRAB') {
       this.triggerBomb(attachedBubble, bubblesToPop, triggeredBombPositions, popups, 0);
       screenShake = true;
-    } else if (attachedBubble.type === 'LIGHTNING') {
+    } else if (attachedBubble.type === 'LIGHTNING' || attachedBubble.type === 'SQUID') {
+      // Squid column ink strike + row lightning
+      this.triggerSquidInk(attachedBubble.col, bubblesToPop, squidColumns, popups);
       this.triggerLightning(attachedBubble.row, bubblesToPop, lightningRows, popups, 0);
+      screenShake = true;
+    } else if (attachedBubble.type === 'OCTOPUS') {
+      this.triggerOctopusChain(attachedBubble, bubblesToPop, popups);
+      screenShake = true;
+    } else if (attachedBubble.type === 'WHIRLPOOL') {
+      this.triggerWhirlpool(attachedBubble, bubblesToPop, popups);
       screenShake = true;
     } else if (attachedBubble.type === 'FREEZE') {
       const targets = this.specialBubbleManager.getFreezeTargets(attachedBubble);
@@ -78,7 +92,7 @@ export class EffectResolver {
       });
       bubblesToPop.set(attachedBubble.id, attachedBubble);
     } else {
-      // Normal or Rainbow match check
+      // Normal or Jellyfish / Rainbow match check
       const matches = this.matchManager.findMatches(attachedBubble);
       if (matches.length >= 3) {
         matches.forEach(b => bubblesToPop.set(b.id, b));
@@ -98,22 +112,32 @@ export class EffectResolver {
           text: `+${matchPoints}`
         });
 
-        // Check for adjacent special bubbles triggered by match
-        this.checkAdjacentSpecials(matches, bubblesToPop, triggeredBombPositions, lightningRows, popups);
+        // Check for adjacent special orbs triggered by match
+        this.checkAdjacentSpecials(
+          matches,
+          bubblesToPop,
+          triggeredBombPositions,
+          lightningRows,
+          squidColumns,
+          crackedTurtles,
+          popups
+        );
       }
     }
 
     // --- STEP 2: CHECK NESTED SPECIAL EFFECTS FOR ALL POPPED BUBBLES ---
     for (const b of Array.from(bubblesToPop.values())) {
-      if (b.type === 'BONUS') {
-        const reward = this.specialBubbleManager.rollBonusReward();
+      if (b.type === 'BONUS' || b.type === 'STARFISH') {
+        const reward = (b.type === 'STARFISH')
+          ? 500 * Math.max(1, this.currentCombo)
+          : this.specialBubbleManager.rollBonusReward();
         baseScore += reward;
         const pos = this.gridManager.gridToPixel(b.row, b.col);
         popups.push({
           x: pos.x,
           y: pos.y,
           score: reward,
-          text: `+${reward} THƯỞNG!`,
+          text: `+${reward} ⭐`,
           color: '#ffd700'
         });
       } else if (b.type === 'CURSE') {
@@ -124,12 +148,39 @@ export class EffectResolver {
           x: pos.x,
           y: pos.y,
           score: penalty,
-          text: `${penalty} LỜI NGUYỀN`,
+          text: `${penalty}`,
           color: '#ff1744'
         });
+      } else if (b.type === 'OCTOPUS') {
+        this.triggerOctopusChain(b, bubblesToPop, popups);
       } else if (b.type === 'TRAP') {
         const newSlots = this.specialBubbleManager.getTrapSpawnSlots(b);
         newSlots.forEach(s => spawnedBubbles.push(s));
+      } else if (b.type === 'SHARK' || b.isBoss) {
+        b.bossHp = (b.bossHp ?? 5) - 1;
+        if (b.bossHp > 0) {
+          // Boss survives hit! Do not pop from grid
+          bubblesToPop.delete(b.id);
+          bossHit = { boss: b, hpRemaining: b.bossHp, defeated: false };
+          popups.push({
+            x: b.visualX,
+            y: b.visualY - 20,
+            score: 500,
+            text: `🦈 BOSS HP: ${b.bossHp}`,
+            color: '#f43f5e'
+          });
+        } else {
+          bossHit = { boss: b, hpRemaining: 0, defeated: true };
+          baseScore += 5000;
+          screenShake = true;
+          popups.push({
+            x: b.visualX,
+            y: b.visualY - 20,
+            score: 5000,
+            text: '🦈 BOSS HẠ GỤC! +5000',
+            color: '#ffd700'
+          });
+        }
       }
     }
 
@@ -190,12 +241,15 @@ export class EffectResolver {
       floatingBubbles,
       frozenBubbles,
       spawnedBubbles,
+      crackedTurtles,
+      bossHit,
       scoreGained: finalScoreDelta,
       comboLevel: this.currentCombo,
       multiplier,
       popups,
       screenShake,
       lightningRows,
+      squidColumns,
       triggeredBombPositions
     };
   }
@@ -227,10 +281,56 @@ export class EffectResolver {
           text: '+10'
         });
 
-        // Chain with other bombs
-        if (b.type === 'BOMB' && b !== bombBubble) {
+        // Chain with other bombs / crabs
+        if ((b.type === 'BOMB' || b.type === 'CRAB') && b !== bombBubble) {
           this.triggerBomb(b, bubblesToPop, triggeredBombs, popups, chainCount + 1);
         }
+      }
+    }
+  }
+
+  private triggerSquidInk(
+    col: number,
+    bubblesToPop: Map<string, BubbleEntity>,
+    squidColumns: number[],
+    popups: ScorePopupData[]
+  ): void {
+    if (squidColumns.includes(col)) return;
+    squidColumns.push(col);
+
+    const colBubbles = this.specialBubbleManager.getSquidColumnBubbles(col);
+    for (const b of colBubbles) {
+      if (!bubblesToPop.has(b.id)) {
+        bubblesToPop.set(b.id, b);
+        popups.push({
+          x: b.visualX,
+          y: b.visualY,
+          score: 25,
+          text: '+25 🦑',
+          color: '#c084fc'
+        });
+      }
+    }
+  }
+
+  private triggerOctopusChain(
+    octopusBubble: BubbleEntity,
+    bubblesToPop: Map<string, BubbleEntity>,
+    popups: ScorePopupData[]
+  ): void {
+    bubblesToPop.set(octopusBubble.id, octopusBubble);
+    const chainTargets = this.specialBubbleManager.getOctopusChainTargets(octopusBubble);
+
+    for (const b of chainTargets) {
+      if (!bubblesToPop.has(b.id)) {
+        bubblesToPop.set(b.id, b);
+        popups.push({
+          x: b.visualX,
+          y: b.visualY,
+          score: 30,
+          text: '+30 🐙',
+          color: '#38bdf8'
+        });
       }
     }
   }
@@ -252,7 +352,6 @@ export class EffectResolver {
 
       if (!bubblesToPop.has(b.id)) {
         bubblesToPop.set(b.id, b);
-        // +15 score per bubble in lightning row
         popups.push({
           x: b.visualX,
           y: b.visualY,
@@ -261,7 +360,7 @@ export class EffectResolver {
         });
 
         // Chain with other Lightning bubbles
-        if (b.type === 'LIGHTNING' && b.row !== row) {
+        if ((b.type === 'LIGHTNING' || b.type === 'SQUID') && b.row !== row) {
           this.triggerLightning(b.row, bubblesToPop, lightningRows, popups, chainCount + 1);
         }
       }
@@ -273,6 +372,8 @@ export class EffectResolver {
     bubblesToPop: Map<string, BubbleEntity>,
     triggeredBombs: { x: number; y: number }[],
     lightningRows: number[],
+    squidColumns: number[],
+    crackedTurtles: BubbleEntity[],
     popups: ScorePopupData[]
   ): void {
     for (const matchBubble of matches) {
@@ -281,14 +382,70 @@ export class EffectResolver {
         const b = this.gridManager.getBubble(n.row, n.col);
         if (!b || bubblesToPop.has(b.id) || b.state === 'FROZEN') continue;
 
-        if (b.type === 'BOMB') {
+        // Rock is immune to normal adjacent matches
+        if (b.type === 'ROCK') continue;
+
+        if (b.type === 'BOMB' || b.type === 'CRAB') {
           this.triggerBomb(b, bubblesToPop, triggeredBombs, popups, 0);
-        } else if (b.type === 'LIGHTNING') {
+        } else if (b.type === 'LIGHTNING' || b.type === 'SQUID') {
+          this.triggerSquidInk(b.col, bubblesToPop, squidColumns, popups);
           this.triggerLightning(b.row, bubblesToPop, lightningRows, popups, 0);
-        } else if (b.type === 'BONUS' || b.type === 'CURSE' || b.type === 'TRAP') {
+        } else if (b.type === 'OCTOPUS') {
+          this.triggerOctopusChain(b, bubblesToPop, popups);
+        } else if (b.type === 'TURTLE' || b.type === 'TRAP') {
+          // Turtle shield check: takes 1 hit to crack, 2nd hit to pop
+          const currentHp = b.shieldHp ?? 2;
+          if (currentHp > 1) {
+            b.shieldHp = 1;
+            crackedTurtles.push(b);
+            popups.push({
+              x: b.visualX,
+              y: b.visualY - 15,
+              score: 50,
+              text: '🛡️ KHIÊN NỨT!',
+              color: '#38bdf8'
+            });
+          } else {
+            bubblesToPop.set(b.id, b);
+          }
+        } else if (b.type === 'BONUS' || b.type === 'STARFISH' || b.type === 'CURSE' || b.type === 'SHARK' || b.type === 'ICE' || b.type === 'CAGE') {
           bubblesToPop.set(b.id, b);
         }
       }
     }
+  }
+
+  private triggerWhirlpool(
+    centerBubble: BubbleEntity,
+    bubblesToPop: Map<string, BubbleEntity>,
+    popups: ScorePopupData[]
+  ): void {
+    const centerPos = this.gridManager.gridToPixel(centerBubble.row, centerBubble.col);
+    const neighbors = this.gridManager.getNeighbors(centerBubble.row, centerBubble.col);
+    bubblesToPop.set(centerBubble.id, centerBubble);
+
+    neighbors.forEach(n => {
+      const b = this.gridManager.getBubble(n.row, n.col);
+      if (b && b.state !== 'DESTROYED') {
+        bubblesToPop.set(b.id, b);
+        // Also secondary neighbors for wide whirlpool radius
+        const secondary = this.gridManager.getNeighbors(n.row, n.col);
+        secondary.forEach(sn => {
+          const sb = this.gridManager.getBubble(sn.row, sn.col);
+          if (sb && sb.state !== 'DESTROYED') {
+            bubblesToPop.set(sb.id, sb);
+          }
+        });
+      }
+    });
+
+    const pts = 800;
+    popups.push({
+      x: centerPos.x,
+      y: centerPos.y,
+      score: pts,
+      text: `🌀 XOÁY NƯỚC +${pts}`,
+      color: '#38bdf8'
+    });
   }
 }

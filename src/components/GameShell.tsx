@@ -4,7 +4,6 @@ import { GameScene } from '../game/GameScene';
 import { HUD } from './HUD';
 import { VictoryModal, GameOverModal, PauseModal } from './Modals';
 import { LevelSelect } from './LevelSelect';
-import { DebugOverlay } from './DebugOverlay';
 import { WelcomeScreen } from './WelcomeScreen';
 import { PhoneLoginModal } from './PhoneLoginModal';
 import { RewardModal } from './RewardModal';
@@ -268,6 +267,12 @@ export const GameShell: React.FC = () => {
 
   return (
     <div className="game-viewport">
+      {/* Ambient Cosmic Background Lighting (Enriches desktop & tablet atmosphere) */}
+      <div className="absolute -top-12 left-1/4 w-96 h-96 bg-cyan-500/15 rounded-full blur-[100px] pointer-events-none animate-pulse" />
+      <div className="absolute -bottom-16 right-1/4 w-96 h-96 bg-purple-600/15 rounded-full blur-[110px] pointer-events-none animate-pulse" />
+      <div className="absolute top-1/2 -left-32 w-80 h-80 bg-blue-600/10 rounded-full blur-[90px] pointer-events-none" />
+      <div className="absolute top-1/2 -right-32 w-80 h-80 bg-pink-600/10 rounded-full blur-[90px] pointer-events-none" />
+
       {/* Game Canvas Container */}
       <div className="game-canvas-wrapper">
         {/* React Top HUD */}
@@ -280,6 +285,10 @@ export const GameShell: React.FC = () => {
           playerPhone={playerPhone}
           onToggleMute={handleToggleMute}
           onPause={handlePause}
+          onBack={() => {
+            setIsLevelSelectOpen(true);
+            handlePause();
+          }}
           onOpenQR={() => {
             setIsQROpen(true);
             handlePause();
@@ -288,9 +297,6 @@ export const GameShell: React.FC = () => {
 
         {/* Phaser 3 Canvas Container */}
         <div ref={containerRef} className="w-full h-full" />
-
-        {/* Debug Console Overlay */}
-        <DebugOverlay stats={stats} levelConfig={currentLevel} />
       </div>
 
       {/* FULLSCREEN POPUP MODALS - RENDERED IN TRUE VIEWPORT CENTER */}

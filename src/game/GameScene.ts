@@ -20,7 +20,8 @@ import {
   SHOOTER_X,
   SHOOTER_Y,
   NEXT_BUBBLE_X,
-  NEXT_BUBBLE_Y
+  NEXT_BUBBLE_Y,
+  getBubbleTextureKey
 } from './constants';
 import { GridManager } from './GridManager';
 import { MatchManager } from './MatchManager';
@@ -80,6 +81,7 @@ export class GameScene extends Phaser.Scene {
   private score: number = 0;
   private shotsLeft: number = 28;
   private maxCombo: number = 0;
+  private missCount: number = 0;
   private aimAngle: number = -Math.PI / 2;
 
   constructor() {
@@ -87,7 +89,23 @@ export class GameScene extends Phaser.Scene {
   }
 
   public preload(): void {
-    // Assets are procedurally generated in create()
+    this.load.image('game_bg', '/background.jpg');
+
+    // Load exact 100% genuine marine creature orbs extracted directly from master design sheet
+    this.load.image('orb_pufferfish', '/assets/orbs/orb_pufferfish.png');
+    this.load.image('orb_turtle', '/assets/orbs/orb_turtle.png');
+    this.load.image('orb_turtle_cracked', '/assets/orbs/orb_turtle_cracked.png');
+    this.load.image('orb_jellyfish', '/assets/orbs/orb_jellyfish.png');
+    this.load.image('orb_starfish', '/assets/orbs/orb_starfish.png');
+    this.load.image('orb_crab', '/assets/orbs/orb_crab.png');
+    this.load.image('orb_squid', '/assets/orbs/orb_squid.png');
+    this.load.image('orb_octopus', '/assets/orbs/orb_octopus.png');
+    this.load.image('orb_shark', '/assets/orbs/orb_shark.png');
+
+    // Load exact 100% genuine Pearl Cannon from master design Section 3
+    this.load.image('pearl_cannon_base', '/assets/cannon/pearl_cannon_base.png');
+    this.load.image('pearl_cannon_barrel', '/assets/cannon/pearl_cannon_barrel.png');
+    this.load.image('pearl_cannon_full', '/assets/cannon/pearl_cannon_full.png');
   }
 
   public create(): void {
@@ -125,102 +143,142 @@ export class GameScene extends Phaser.Scene {
   }
 
   private renderBoardChrome(): void {
-    const bgGraphics = this.add.graphics();
-    bgGraphics.setDepth(1);
+    // 0. Celestial Anime Whale Artwork Backdrop
+    if (this.textures.exists('game_bg')) {
+      const bgImage = this.add.image(GAME_WIDTH / 2, GAME_HEIGHT / 2, 'game_bg');
+      bgImage.setDisplaySize(GAME_WIDTH, GAME_HEIGHT);
+      bgImage.setDepth(0);
 
-    // 1. Playfield backdrop fill
-    bgGraphics.fillStyle(0x0a0f1d, 0.85);
-    bgGraphics.fillRoundedRect(LEFT_WALL_X, CEILING_Y, RIGHT_WALL_X - LEFT_WALL_X, DANGER_LINE_Y - CEILING_Y, 8);
-
-    // 2. Faint hexagonal honeycomb matrix nodes (only above danger line)
-    for (let r = 0; r < 12; r++) {
-      const cols = this.gridManager.getColsInRow(r);
-      for (let c = 0; c < cols; c++) {
-        const pt = this.gridManager.gridToPixel(r, c);
-        if (pt.y + BUBBLE_RADIUS <= DANGER_LINE_Y) {
-          bgGraphics.lineStyle(1, 0x1e293b, 0.3);
-          bgGraphics.strokeCircle(pt.x, pt.y, BUBBLE_RADIUS - 4);
-        }
-      }
-    }
-
-    // 3. Left & Right Neon Arcade Rails
-    const railGfx = this.add.graphics();
-    railGfx.setDepth(2);
-
-    // Left Rail
-    railGfx.fillStyle(0x1e293b, 0.9);
-    railGfx.fillRect(LEFT_WALL_X - 12, CEILING_Y - 20, 12, (DANGER_LINE_Y - CEILING_Y) + 40);
-    railGfx.lineStyle(2, 0x00e5ff, 0.8);
-    railGfx.lineBetween(LEFT_WALL_X, CEILING_Y - 20, LEFT_WALL_X, DANGER_LINE_Y + 20);
-
-    // Right Rail
-    railGfx.fillStyle(0x1e293b, 0.9);
-    railGfx.fillRect(RIGHT_WALL_X, CEILING_Y - 20, 12, (DANGER_LINE_Y - CEILING_Y) + 40);
-    railGfx.lineStyle(2, 0x00e5ff, 0.8);
-    railGfx.lineBetween(RIGHT_WALL_X, CEILING_Y - 20, RIGHT_WALL_X, DANGER_LINE_Y + 20);
-
-    // 4. Industrial Metallic Top Ceiling Beam
-    const ceilingGfx = this.add.graphics();
-    ceilingGfx.setDepth(12); // Render above bubbles so bubbles do not poke through hazard bar
-    ceilingGfx.fillStyle(0x0f172a, 1);
-    ceilingGfx.fillRect(LEFT_WALL_X - 12, CEILING_Y - 24, (RIGHT_WALL_X - LEFT_WALL_X) + 24, 24);
-
-    // Hazard chevrons on ceiling
-    for (let x = LEFT_WALL_X; x < RIGHT_WALL_X; x += 30) {
-      ceilingGfx.fillStyle(0xffb703, 0.7);
-      ceilingGfx.beginPath();
-      ceilingGfx.moveTo(x, CEILING_Y - 4);
-      ceilingGfx.lineTo(x + 10, CEILING_Y - 4);
-      ceilingGfx.lineTo(x + 20, CEILING_Y - 22);
-      ceilingGfx.lineTo(x + 10, CEILING_Y - 22);
-      ceilingGfx.closePath();
-      ceilingGfx.fill();
-    }
-
-    // Chrome beam border
-    ceilingGfx.lineStyle(2, 0x64748b, 1);
-    ceilingGfx.strokeRect(LEFT_WALL_X - 12, CEILING_Y - 24, (RIGHT_WALL_X - LEFT_WALL_X) + 24, 24);
-
-    // 5. Danger Laser Perimeter Line with Glowing Warning
-    const dangerGfx = this.add.graphics();
-    dangerGfx.setDepth(5);
-    dangerGfx.lineStyle(2, 0xef4444, 0.8);
-    dangerGfx.lineBetween(LEFT_WALL_X, DANGER_LINE_Y, RIGHT_WALL_X, DANGER_LINE_Y);
-
-    const dangerText = this.add.text(RIGHT_WALL_X - 120, DANGER_LINE_Y + 4, '⚠ VẠCH NGUY HIỂM', {
-      fontFamily: 'Outfit, sans-serif',
-      fontSize: '10px',
-      color: '#ef4444',
-      fontStyle: 'bold'
-    });
-    dangerText.setDepth(5);
-
-    this.tweens.add({
-      targets: [dangerGfx, dangerText],
-      alpha: 0.25,
-      duration: 800,
-      yoyo: true,
-      repeat: -1
-    });
-
-    // 6. Ambient floating stardust particles
-    for (let i = 0; i < 15; i++) {
-      const px = LEFT_WALL_X + 20 + Math.random() * (RIGHT_WALL_X - LEFT_WALL_X - 40);
-      const py = CEILING_Y + 20 + Math.random() * 500;
-      const dust = this.add.circle(px, py, Math.random() * 1.5 + 1, 0x00e5ff, Math.random() * 0.4 + 0.1);
-      dust.setDepth(2);
-
+      // Subtle slow dreamy drift animation
       this.tweens.add({
-        targets: dust,
-        y: dust.y - (30 + Math.random() * 30),
-        alpha: 0.05,
-        duration: 3000 + Math.random() * 3000,
+        targets: bgImage,
+        scaleX: bgImage.scaleX * 1.03,
+        scaleY: bgImage.scaleY * 1.03,
+        duration: 10000,
         yoyo: true,
         repeat: -1,
         ease: 'Sine.easeInOut'
       });
     }
+
+    const bgGraphics = this.add.graphics();
+    bgGraphics.setDepth(1);
+
+    // 1. Organic Underwater Volumetric Light Rays (God Rays from ocean surface)
+    for (let i = 0; i < 3; i++) {
+      const ray = this.add.graphics();
+      ray.setDepth(1);
+      ray.fillStyle(0x38bdf8, 0.04 + i * 0.015);
+      ray.beginPath();
+      const startX = 80 + i * 140;
+      ray.moveTo(startX, 0);
+      ray.lineTo(startX + 90, 0);
+      ray.lineTo(startX + 180, GAME_HEIGHT);
+      ray.lineTo(startX + 30, GAME_HEIGHT);
+      ray.closePath();
+      ray.fill();
+
+      // Gentle swaying undulation
+      this.tweens.add({
+        targets: ray,
+        alpha: { from: 0.03, to: 0.07 },
+        x: { from: -15, to: 15 },
+        duration: 4500 + i * 1200,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.easeInOut'
+      });
+    }
+
+    // 2. Soft Underwater Floating Plankton / Light Orbs
+    for (let p = 0; p < 8; p++) {
+      const px = LEFT_WALL_X + Math.random() * (RIGHT_WALL_X - LEFT_WALL_X);
+      const py = CEILING_Y + Math.random() * (DANGER_LINE_Y - CEILING_Y);
+      const plankton = this.add.circle(px, py, 2 + Math.random() * 2, 0x67e8f9, 0.25);
+      plankton.setDepth(2);
+
+      this.tweens.add({
+        targets: plankton,
+        y: py - 40 - Math.random() * 50,
+        x: px + (Math.random() * 30 - 15),
+        alpha: { from: 0.15, to: 0.4 },
+        duration: 3500 + Math.random() * 2000,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.easeInOut'
+      });
+    }
+
+    // 3. Ambient Stardust & Bioluminescent Plankton Particles
+    for (let i = 0; i < 15; i++) {
+      const px = LEFT_WALL_X + 15 + Math.random() * (RIGHT_WALL_X - LEFT_WALL_X - 30);
+      const py = CEILING_Y + 15 + Math.random() * 450;
+      const dust = this.add.circle(px, py, Math.random() * 1.5 + 0.8, 0x38bdf8, Math.random() * 0.4 + 0.15);
+      dust.setDepth(2);
+
+      this.tweens.add({
+        targets: dust,
+        y: dust.y - (25 + Math.random() * 35),
+        alpha: 0.05,
+        duration: 2500 + Math.random() * 3000,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.easeInOut'
+      });
+    }
+
+    // 7b. Rising Ocean Oxygen Bubbles System (Bọt khí đại dương nổi bồng bềnh)
+    for (let i = 0; i < 8; i++) {
+      const spawnBubble = () => {
+        if (!this.textures.exists('water_bubble') || !this.add) return;
+        const bx = LEFT_WALL_X + 20 + Math.random() * (RIGHT_WALL_X - LEFT_WALL_X - 40);
+        const by = GAME_HEIGHT - 20 - Math.random() * 80;
+        const bubble = this.add.image(bx, by, 'water_bubble');
+        const scale = 0.35 + Math.random() * 0.45;
+        bubble.setScale(scale);
+        bubble.setAlpha(0.6 + Math.random() * 0.3);
+        bubble.setDepth(2);
+
+        const duration = 5000 + Math.random() * 4000;
+        const sway = 15 + Math.random() * 20;
+
+        this.tweens.add({
+          targets: bubble,
+          x: bx + (Math.random() > 0.5 ? sway : -sway),
+          duration: 1500 + Math.random() * 1000,
+          yoyo: true,
+          repeat: -1,
+          ease: 'Sine.easeInOut'
+        });
+
+        this.tweens.add({
+          targets: bubble,
+          y: CEILING_Y - 10,
+          duration: duration,
+          ease: 'Linear',
+          onComplete: () => {
+            bubble.destroy();
+            this.time?.delayedCall(Math.random() * 3000, spawnBubble);
+          }
+        });
+      };
+
+      this.time.delayedCall(i * 700 + Math.random() * 1000, spawnBubble);
+    }
+
+    // 8. Launcher Platform Ambient Glow
+    const launcherGlow = this.add.circle(SHOOTER_X, SHOOTER_Y, 70, 0x00e5ff, 0.08);
+    launcherGlow.setDepth(1);
+    this.tweens.add({
+      targets: launcherGlow,
+      scaleX: 1.15,
+      scaleY: 1.15,
+      alpha: 0.15,
+      duration: 1800,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.easeInOut'
+    });
   }
 
   private setupInputHandlers(): void {
@@ -252,17 +310,20 @@ export class GameScene extends Phaser.Scene {
       if (pointer.y > SHOOTER_Y - 15) return;
 
       // 4. Update aim trajectory - only enter AIMING if aim is valid
+      this.aimGuide.setAimColor(this.shooterManager.getCurrentBubbleTintHex());
       const res = this.aimGuide.updateAim(pointer.x, pointer.y);
       if (res.isValid) {
         this.currentState = 'AIMING';
         this.aimAngle = res.angle;
         this.shooterManager.setAimAngle(this.aimAngle);
+        this.shooterManager.startCharging();
       }
     });
 
     this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
       if (this.currentState !== 'AIMING') return;
 
+      this.aimGuide.setAimColor(this.shooterManager.getCurrentBubbleTintHex());
       const res = this.aimGuide.updateAim(pointer.x, pointer.y);
       if (res.isValid && pointer.y <= SHOOTER_Y - 20) {
         this.aimAngle = res.angle;
@@ -270,12 +331,14 @@ export class GameScene extends Phaser.Scene {
       } else {
         // User dragged downward to cancel shot
         this.aimGuide.hide();
+        this.shooterManager.stopCharging();
       }
     });
 
     this.input.on('pointerup', (pointer: Phaser.Input.Pointer) => {
       if (this.currentState !== 'AIMING') return;
       this.aimGuide.hide();
+      this.shooterManager.stopCharging();
 
       const res = this.aimGuide.updateAim(pointer.x, pointer.y);
       if (!res.isValid || pointer.y > SHOOTER_Y - 20) {
@@ -319,6 +382,13 @@ export class GameScene extends Phaser.Scene {
     }
   };
 
+  private boundUsePowerupHandler = (powerupType: BubbleType) => {
+    if (this.currentState !== 'IDLE' && this.currentState !== 'AIMING') return;
+    this.shooterManager.loadPowerupBubble(powerupType);
+    this.aimGuide.setAimColor(this.shooterManager.getCurrentBubbleTintHex());
+    audioManager.play('bonus');
+  };
+
   private setupEventBridge(): void {
     this.cleanupEventBridge();
 
@@ -327,6 +397,7 @@ export class GameScene extends Phaser.Scene {
     eventBridge.on(GAME_EVENTS.RESTART_LEVEL, this.boundRestartHandler);
     eventBridge.on(GAME_EVENTS.LOAD_LEVEL, this.boundLoadLevelHandler);
     eventBridge.on(GAME_EVENTS.SWAP_BUBBLES, this.boundSwapHandler);
+    eventBridge.on(GAME_EVENTS.USE_POWERUP, this.boundUsePowerupHandler);
     eventBridge.on(GAME_EVENTS.APPLY_WELCOME_BONUS, (data: { bonusShots?: number; bonusScore?: number }) => {
       if (data?.bonusShots) this.shotsLeft += data.bonusShots;
       if (data?.bonusScore) this.score += data.bonusScore;
@@ -343,6 +414,7 @@ export class GameScene extends Phaser.Scene {
     eventBridge.off(GAME_EVENTS.RESTART_LEVEL, this.boundRestartHandler);
     eventBridge.off(GAME_EVENTS.LOAD_LEVEL, this.boundLoadLevelHandler);
     eventBridge.off(GAME_EVENTS.SWAP_BUBBLES, this.boundSwapHandler);
+    eventBridge.off(GAME_EVENTS.USE_POWERUP, this.boundUsePowerupHandler);
   }
 
   public loadLevel(config: LevelConfig): void {
@@ -353,6 +425,7 @@ export class GameScene extends Phaser.Scene {
     this.score = hasPhone ? 500 : 0;
     this.shotsLeft = config.maxShots + (hasPhone ? 5 : 0);
     this.maxCombo = 0;
+    this.missCount = 0;
     this.effectResolver.resetCombo();
     this.difficultyManager.resetLevel();
 
@@ -385,6 +458,43 @@ export class GameScene extends Phaser.Scene {
       }
     }
 
+    // Apply custom grid overrides if specified (for special orbs, obstacles, and Boss encounters)
+    if (config.customGrid && config.customGrid.length > 0) {
+      for (const item of config.customGrid) {
+        let existing = this.gridManager.getBubble(item.row, item.col);
+        if (!existing) {
+          existing = {
+            id: `bubble_custom_${item.row}_${item.col}`,
+            row: item.row,
+            col: item.col,
+            color: item.color || config.colors[0],
+            type: item.type || 'NORMAL',
+            state: 'ATTACHED',
+            freezeTurnsRemaining: 0,
+            visualX: 0,
+            visualY: 0
+          };
+          this.gridManager.setBubble(item.row, item.col, existing);
+        }
+
+        if (item.type) {
+          existing.type = item.type;
+          if (item.type === 'TURTLE') existing.shieldHp = 2;
+          if (item.type === 'SHARK') {
+            existing.isBoss = true;
+            existing.bossHp = config.level >= 10 ? 5 : 3;
+            existing.bossMaxHp = existing.bossHp;
+          }
+        }
+        if (item.color) existing.color = item.color;
+
+        // Refresh sprite
+        const oldSprite = this.bubbleSprites.get(existing.id);
+        if (oldSprite) oldSprite.destroy();
+        this.createBubbleSprite(existing);
+      }
+    }
+
     // Initialize Launcher with first bubbles
     this.shooterManager.initBubbles(
       config.level,
@@ -402,13 +512,23 @@ export class GameScene extends Phaser.Scene {
     bubble.visualX = pos.x;
     bubble.visualY = pos.y;
 
-    const textureKey = bubble.type === 'NORMAL'
-      ? `bubble_${bubble.color}`
-      : `bubble_${bubble.type}`;
+    const textureKey = getBubbleTextureKey(bubble);
 
     const sprite = this.add.image(pos.x, pos.y, textureKey);
     sprite.setDisplaySize(BUBBLE_DIAMETER, BUBBLE_DIAMETER);
     sprite.setDepth(10);
+
+    // Subtle gentle floating bobbing for special aquatic creatures
+    if (bubble.type === 'JELLYFISH' || bubble.type === 'SHARK' || bubble.type === 'OCTOPUS') {
+      this.tweens.add({
+        targets: sprite,
+        y: pos.y + 3,
+        duration: 1800 + Math.random() * 500,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.easeInOut'
+      });
+    }
 
     this.bubbleSprites.set(bubble.id, sprite);
     return sprite;
@@ -423,19 +543,40 @@ export class GameScene extends Phaser.Scene {
     this.shooterManager.triggerRecoil();
     audioManager.play('bubble_shoot');
 
+    // Muzzle position along current aim vector
+    const muzzleDist = 65;
+    const muzzleX = SHOOTER_X + Math.cos(this.aimAngle) * muzzleDist;
+    const muzzleY = (SHOOTER_Y - 14) + Math.sin(this.aimAngle) * muzzleDist;
+
+    // Muzzle Flash Ring
+    if (this.textures.exists('particle_ring')) {
+      const flash = this.add.image(muzzleX, muzzleY, 'particle_ring');
+      flash.setTint(this.shooterManager.getCurrentBubbleTintHex());
+      flash.setScale(0.25);
+      flash.setAlpha(0.85);
+      flash.setDepth(16);
+      this.tweens.add({
+        targets: flash,
+        scaleX: 0.9,
+        scaleY: 0.9,
+        alpha: 0,
+        duration: 160,
+        ease: 'Cubic.easeOut',
+        onComplete: () => flash.destroy()
+      });
+    }
+
     // Create projectile sprite by consuming it from the launcher
     const bubble = this.shooterManager.currentBubble;
     bubble.state = 'SHOOTING';
 
     let sprite = this.shooterManager.consumeCurrentBubbleSprite();
     if (!sprite) {
-      const textureKey = bubble.type === 'NORMAL'
-        ? `bubble_${bubble.color}`
-        : `bubble_${bubble.type}`;
-      sprite = this.add.image(SHOOTER_X, SHOOTER_Y, textureKey);
+      const textureKey = getBubbleTextureKey(bubble);
+      sprite = this.add.image(muzzleX, muzzleY, textureKey);
     }
     sprite.setDisplaySize(BUBBLE_DIAMETER, BUBBLE_DIAMETER);
-    sprite.setPosition(SHOOTER_X, SHOOTER_Y);
+    sprite.setPosition(muzzleX, muzzleY);
     sprite.setDepth(15);
 
     const vx = Math.cos(this.aimAngle) * SHOOT_SPEED;
@@ -466,7 +607,7 @@ export class GameScene extends Phaser.Scene {
     proj.sprite.x = bounceRes.x;
     proj.vx = bounceRes.vx;
     if (bounceRes.bounced) {
-      audioManager.play('bubble_hit');
+      audioManager.play('bubble_bounce');
       this.particleManager.emitWallSpark(proj.sprite.x, proj.sprite.y);
     }
 
@@ -537,6 +678,53 @@ export class GameScene extends Phaser.Scene {
       audioManager.play('lightning');
     });
 
+    // Visual Squid Column Ink Strikes
+    if (result.squidColumns) {
+      result.squidColumns.forEach(col => {
+        this.particleManager.emitSquidInkVortex(col);
+        audioManager.play('lightning');
+      });
+    }
+
+    // Visual Cracked Turtle Shields
+    if (result.crackedTurtles && result.crackedTurtles.length > 0) {
+      audioManager.play('shield_crack');
+      result.crackedTurtles.forEach(tb => {
+        const sprite = this.bubbleSprites.get(tb.id);
+        if (sprite) {
+          sprite.setTexture('bubble_TURTLE_CRACKED');
+          this.particleManager.emitShieldCrackParticles(sprite.x, sprite.y);
+          this.tweens.add({
+            targets: sprite,
+            scaleX: 1.25,
+            scaleY: 0.8,
+            yoyo: true,
+            duration: 90,
+            repeat: 1
+          });
+        }
+      });
+    }
+
+    // Boss Hit Flinch & Sound
+    if (result.bossHit) {
+      if ((result.bossHit.boss.bossHp || 0) <= 0) {
+        audioManager.play('boss_defeat');
+      } else {
+        audioManager.play('boss_hit');
+      }
+      const bossSprite = this.bubbleSprites.get(result.bossHit.boss.id);
+      if (bossSprite) {
+        this.tweens.add({
+          targets: bossSprite,
+          alpha: 0.3,
+          yoyo: true,
+          duration: 70,
+          repeat: 3
+        });
+      }
+    }
+
     // Visual Frozen Encasements
     result.frozenBubbles.forEach(fb => {
       this.applyFrozenVisual(fb);
@@ -578,8 +766,11 @@ export class GameScene extends Phaser.Scene {
 
     // 1. Animate Popped Bubbles
     if (result.poppedBubbles.length > 0) {
-      audioManager.play('bubble_pop');
-      result.poppedBubbles.forEach(b => {
+      result.poppedBubbles.forEach((b, idx) => {
+        // Pentatonic pitch cascade with subtle stagger
+        this.time.delayedCall(idx * 35, () => {
+          audioManager.play('bubble_pop', idx);
+        });
         const sprite = this.bubbleSprites.get(b.id);
         if (sprite) {
           this.particleManager.emitPopParticles(sprite.x, sprite.y, b.color);
@@ -631,6 +822,18 @@ export class GameScene extends Phaser.Scene {
       audioManager.play('combo', result.comboLevel);
     }
 
+    // Ocean Pressure / Miss Meter mechanics (Mục 9 & Reference A Miss Pod)
+    if (result.poppedBubbles.length > 0) {
+      this.missCount = 0;
+    } else {
+      this.missCount += 1;
+      if (this.missCount >= 5) {
+        this.triggerOceanPressureSurge();
+        this.missCount = 0;
+      }
+    }
+    this.shooterManager.updateMissCount(this.missCount);
+
     // Tick freeze turns
     const thawed = this.specialBubbleManager.tickFreezeTurns();
     thawed.forEach(tb => this.removeFrozenVisual(tb));
@@ -640,6 +843,16 @@ export class GameScene extends Phaser.Scene {
     this.time.delayedCall(waitTime, () => {
       this.checkEndTurnConditions();
     });
+  }
+
+  private triggerOceanPressureSurge(): void {
+    // Screen shake and water tidal surge warning
+    this.cameras.main.shake(350, 0.012);
+    audioManager.play('trap');
+    this.particleManager.showScorePopup(GAME_WIDTH / 2, DANGER_LINE_Y - 30, '⚠️ ÁP SUẤT DÂNG CAO!', '#f43f5e');
+    if (this.shotsLeft > 1) {
+      this.shotsLeft -= 1;
+    }
   }
 
   private applyFrozenVisual(bubble: BubbleEntity): void {
@@ -744,6 +957,9 @@ export class GameScene extends Phaser.Scene {
   }
 
   private emitStatsUpdate(): void {
+    const allBubbles = this.gridManager.getAllBubbles();
+    const bossBubble = allBubbles.find(b => b.type === 'SHARK' || b.isBoss);
+
     const stats: GameStats = {
       score: this.score,
       combo: this.effectResolver.getCombo(),
@@ -752,7 +968,12 @@ export class GameScene extends Phaser.Scene {
       level: this.currentLevelConfig.level,
       stars: 0,
       boardOccupancy: this.gridManager.getOccupancy(),
-      gameStatus: this.currentState === 'WIN' ? 'WIN' : this.currentState === 'LOSE' ? 'LOSE' : 'PLAYING'
+      gameStatus: this.currentState === 'WIN' ? 'WIN' : this.currentState === 'LOSE' ? 'LOSE' : 'PLAYING',
+      bossHp: bossBubble?.bossHp,
+      bossMaxHp: bossBubble?.bossMaxHp ?? 5,
+      bossName: bossBubble ? '🦈 SHARK TITAN' : undefined,
+      missCount: this.missCount,
+      maxMisses: 5
     };
     eventBridge.emit(GAME_EVENTS.SCORE_UPDATED, stats);
   }

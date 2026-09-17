@@ -85,6 +85,42 @@ export class SpecialBubbleManager {
   }
 
   /**
+   * Calculates Squid vertical column piercing ink strike.
+   */
+  public getSquidColumnBubbles(col: number): BubbleEntity[] {
+    const list: BubbleEntity[] = [];
+    for (let r = 0; r < 13; r++) {
+      const b = this.gridManager.getBubble(r, col);
+      if (b && b.state !== 'DESTROYED') {
+        list.push(b);
+      }
+    }
+    return list;
+  }
+
+  /**
+   * Calculates Octopus global chain reaction connecting to all bubbles of the dominant matching color.
+   */
+  public getOctopusChainTargets(octopusBubble: BubbleEntity): BubbleEntity[] {
+    const all = this.gridManager.getAllBubbles();
+    const colorCounts = new Map<BubbleColor, number>();
+    for (const b of all) {
+      if (b !== octopusBubble && (b.type === 'NORMAL' || b.type === 'PUFFERFISH') && b.state !== 'DESTROYED') {
+        colorCounts.set(b.color, (colorCounts.get(b.color) || 0) + 1);
+      }
+    }
+    let targetColor: BubbleColor = 'BLUE';
+    let maxCount = 0;
+    for (const [col, count] of colorCounts.entries()) {
+      if (count > maxCount) {
+        maxCount = count;
+        targetColor = col;
+      }
+    }
+    return all.filter(b => b.color === targetColor && (b.type === 'NORMAL' || b.type === 'PUFFERFISH'));
+  }
+
+  /**
    * Calculates Freeze target bubbles (up to 8 surrounding bubbles, duration 2 turns).
    */
   public getFreezeTargets(startBubble: BubbleEntity): BubbleEntity[] {

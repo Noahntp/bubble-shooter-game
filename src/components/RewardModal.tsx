@@ -50,15 +50,15 @@ export const RewardModal: React.FC<RewardModalProps> = ({
 
         {/* Ribbon Pill Badge */}
         <span className="modal-badge-20">
-          ★ KÍCH HOẠT THÀNH CÔNG ★
+          ★ KHO BÁU ĐẠI DƯƠNG ĐÃ MỞ ★
         </span>
 
         {/* Title */}
         <h2 className="modal-title-20">
-          Nhận Quà Thành Công!
+          Nhận Kho Báu Thủy Cung!
         </h2>
         <p className="modal-desc-20">
-          Tài khoản: <strong className="text-amber-300 font-mono font-black">{phone}</strong>
+          Thợ lặn: <strong className="text-amber-300 font-mono font-black">{phone}</strong>
         </p>
 
         {/* Dual Reward Container - 20px margin */}
@@ -68,7 +68,7 @@ export const RewardModal: React.FC<RewardModalProps> = ({
               <Target size={18} />
             </div>
             <div className="text-left leading-tight">
-              <div className="text-[10px] text-cyan-300 font-bold uppercase tracking-wider">Cộng vào ví</div>
+              <div className="text-[10px] text-cyan-300 font-bold uppercase tracking-wider">Túi ngọc</div>
               <div className="text-sm font-black text-white">+5 Lượt</div>
             </div>
           </div>
@@ -93,13 +93,13 @@ export const RewardModal: React.FC<RewardModalProps> = ({
             className="modal-btn-20 modal-btn-gold-20"
           >
             <Play size={18} fill="currentColor" />
-            <span>VÀO BẮN BÓNG NGAY</span>
+            <span>BẮT ĐẦU LẶN BIỂN NGAY</span>
           </button>
         </div>
 
         <div className="modal-footer-20">
           <Sparkles size={14} className="text-amber-400 shrink-0" />
-          <span>Chúc bạn chơi vui vẻ và đạt điểm cao!</span>
+          <span>Chúc bạn chinh phục trọn vẹn 10 kỳ quan thủy cung!</span>
         </div>
       </div>
     </div>

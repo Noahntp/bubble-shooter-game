@@ -87,10 +87,10 @@ export const PhoneLoginModal: React.FC<PhoneLoginModalProps> = ({
 
             {/* Title & Subtitle */}
             <h2 className="modal-title-20">
-              Nhập Số Điện Thoại
+              Kho Báu Thủy Cung
             </h2>
             <p className="modal-desc-20">
-              Nhận ngay quà tân thủ và lưu điểm
+              Nhận ngay túi ngọc tân thủ và lưu điểm
             </p>
 
             {/* Unified Golden Reward Bar */}
@@ -100,7 +100,7 @@ export const PhoneLoginModal: React.FC<PhoneLoginModalProps> = ({
                   <Target size={15} />
                 </div>
                 <div className="text-left leading-tight">
-                  <div className="text-[10px] text-cyan-300 font-bold uppercase tracking-wider">Thêm lượt</div>
+                  <div className="text-[10px] text-cyan-300 font-bold uppercase tracking-wider">Túi ngọc</div>
                   <div className="text-xs sm:text-sm font-black text-white">+5 Lượt</div>
                 </div>
               </div>
@@ -193,7 +193,7 @@ export const PhoneLoginModal: React.FC<PhoneLoginModalProps> = ({
                   className="modal-btn-20 modal-btn-gold-20"
                 >
                   <Gift size={18} />
-                  <span>NHẬN QUÀ &amp; VÀO CHƠI NGAY</span>
+                  <span>NHẬN KHO BÁU &amp; LẶN BIỂN NGAY</span>
                 </button>
 
                 <button

@@ -4,13 +4,26 @@ export const ALL_BUBBLE_COLORS: BubbleColor[] = ['RED', 'BLUE', 'GREEN', 'YELLOW
 
 export type BubbleType = 
   | 'NORMAL'
+  | 'PUFFERFISH'
   | 'BONUS'
+  | 'STARFISH'
   | 'RAINBOW'
+  | 'JELLYFISH'
   | 'BOMB'
+  | 'CRAB'
   | 'LIGHTNING'
+  | 'SQUID'
   | 'FREEZE'
   | 'CURSE'
-  | 'TRAP';
+  | 'OCTOPUS'
+  | 'TRAP'
+  | 'TURTLE'
+  | 'SHARK'
+  | 'WHIRLPOOL'
+  | 'ROCK'
+  | 'ICE'
+  | 'CAGE'
+  | 'SEAWEED';
 
 export type BubbleState = 
   | 'IDLE'
@@ -40,6 +53,10 @@ export interface BubbleEntity {
   freezeTurnsRemaining: number;
   visualX: number;
   visualY: number;
+  shieldHp?: number; // 2 for Turtle Shield, 1 when cracked
+  isBoss?: boolean;
+  bossHp?: number;
+  bossMaxHp?: number;
 }
 
 export interface GridCoord {
@@ -56,6 +73,13 @@ export interface SpecialBubbleSpawnRates {
   FREEZE: number;
   CURSE: number;
   TRAP: number;
+  JELLYFISH?: number;
+  TURTLE?: number;
+  STARFISH?: number;
+  CRAB?: number;
+  SQUID?: number;
+  OCTOPUS?: number;
+  SHARK?: number;
 }
 
 export interface LevelConfig {
@@ -89,4 +113,14 @@ export interface GameStats {
   stars: number;
   boardOccupancy: number; // 0.0 - 1.0
   gameStatus: GameStatus;
+  bossHp?: number;
+  bossMaxHp?: number;
+  bossName?: string;
+  missCount?: number;
+  maxMisses?: number;
+  powerUps?: {
+    bomb: number;
+    lightning: number;
+    whirlpool: number;
+  };
 }

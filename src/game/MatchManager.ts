@@ -14,13 +14,13 @@ export class MatchManager {
   public findMatches(startBubble: BubbleEntity): BubbleEntity[] {
     if (startBubble.state === 'FROZEN') return [];
 
-    // Case 1: The shot bubble is a RAINBOW bubble
-    if (startBubble.type === 'RAINBOW') {
+    // Case 1: The shot bubble is a RAINBOW / JELLYFISH wild bubble
+    if (startBubble.type === 'RAINBOW' || startBubble.type === 'JELLYFISH') {
       return this.findBestRainbowMatch(startBubble);
     }
 
-    // Non-matchable types (BONUS, CURSE, TRAP, BOMB, LIGHTNING) don't form color matches on their own
-    if (startBubble.type !== 'NORMAL') {
+    // Non-matchable special types don't form color matches on their own
+    if (startBubble.type !== 'NORMAL' && startBubble.type !== 'PUFFERFISH') {
       return [];
     }
 
@@ -28,7 +28,7 @@ export class MatchManager {
   }
 
   /**
-   * Finds all connected bubbles matching targetColor (including RAINBOW wildcards).
+   * Finds all connected bubbles matching targetColor (including RAINBOW / JELLYFISH wildcards).
    */
   public findConnectedColorCluster(startBubble: BubbleEntity, targetColor: BubbleColor): BubbleEntity[] {
     const visited = new Set<string>();
@@ -49,13 +49,13 @@ export class MatchManager {
         const neighbor = this.gridManager.getBubble(nCoord.row, nCoord.col);
         if (!neighbor) continue;
 
-        // Frozen bubbles cannot match
-        if (neighbor.state === 'FROZEN') continue;
+        // Frozen bubbles and obstacles cannot match directly
+        if (neighbor.state === 'FROZEN' || neighbor.type === 'ROCK') continue;
 
-        const isColorMatch = neighbor.type === 'NORMAL' && neighbor.color === targetColor;
-        const isRainbowMatch = neighbor.type === 'RAINBOW';
+        const isColorMatch = (neighbor.type === 'NORMAL' || neighbor.type === 'PUFFERFISH') && neighbor.color === targetColor;
+        const isWildMatch = neighbor.type === 'RAINBOW' || neighbor.type === 'JELLYFISH';
 
-        if (isColorMatch || isRainbowMatch) {
+        if (isColorMatch || isWildMatch) {
           visited.add(key);
           queue.push(neighbor);
         }
@@ -66,7 +66,7 @@ export class MatchManager {
   }
 
   /**
-   * Resolves Rainbow wildcard priority:
+   * Resolves Rainbow/Jellyfish wildcard priority:
    * 1. Largest matching group
    * 2. Closest to impact point
    * 3. Deterministic color fallback
@@ -77,7 +77,7 @@ export class MatchManager {
 
     for (const n of neighbors) {
       const b = this.gridManager.getBubble(n.row, n.col);
-      if (b && b.state !== 'FROZEN' && b.type === 'NORMAL') {
+      if (b && b.state !== 'FROZEN' && (b.type === 'NORMAL' || b.type === 'PUFFERFISH')) {
         adjacentColors.add(b.color);
       }
     }

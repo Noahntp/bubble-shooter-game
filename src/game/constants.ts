@@ -12,17 +12,19 @@ export const BOARD_WIDTH = GRID_COLS * BUBBLE_DIAMETER; // 480px
 export const LEFT_WALL_X = LEFT_MARGIN;
 export const RIGHT_WALL_X = LEFT_MARGIN + BOARD_WIDTH; // 500px
 
-export const CEILING_Y = 104;
-export const DANGER_LINE_Y = 645;
+export const CEILING_Y = 118;
+export const DANGER_LINE_Y = 560;
 
-export const SHOOTER_X = GAME_WIDTH / 2;
-export const SHOOTER_Y = 715;
-export const NEXT_BUBBLE_X = SHOOTER_X - 110;
-export const NEXT_BUBBLE_Y = SHOOTER_Y + 5;
+export const SHOOTER_X = GAME_WIDTH / 2; // 260
+export const SHOOTER_Y = 695;
+export const NEXT_BUBBLE_X = 115;
+export const NEXT_BUBBLE_Y = 675;
+export const MISS_METER_X = 405;
+export const MISS_METER_Y = 680;
 
 export const BUBBLE_TEXTURE_SIZE = 120; // High-DPI procedural texture resolution
 export const BUBBLE_SCALE = BUBBLE_DIAMETER / BUBBLE_TEXTURE_SIZE; // 0.5 (60px diameter)
-export const RESERVE_BUBBLE_SCALE = (BUBBLE_DIAMETER * 0.75) / BUBBLE_TEXTURE_SIZE; // 0.375 (45px diameter)
+export const RESERVE_BUBBLE_SCALE = (BUBBLE_DIAMETER * 0.62) / BUBBLE_TEXTURE_SIZE; // ~0.31 (37px diameter, ~62% of current)
 
 export const SHOOT_SPEED = 1400; // pixels per second
 export const POP_DURATION = 160; // ms
@@ -69,3 +71,51 @@ export const BASE_MATCH_SCORES: Record<number, number> = {
 };
 
 export const COMBO_MULTIPLIERS = [1.0, 1.5, 2.0, 3.0, 4.0];
+
+// Ocean Orb Mechanics Constants
+export const OCEAN_ORB_CONFIG = {
+  MATCH_COUNT_MIN: 3,
+  TURTLE_SHIELD_MAX_HP: 2,
+  CRAB_BOMB_RADIUS_PX: BUBBLE_RADIUS * 3.2,
+  STARFISH_BONUS_BASE_SCORE: 500,
+  OCTOPUS_CHAIN_DELAY_MS: 60,
+  SHARK_BOSS_DEFAULT_HP: 5,
+  SHARK_BOSS_REWARD_SCORE: 5000,
+  OBSTACLE_ROCK_SCORE: 200,
+  OBSTACLE_ICE_HITS_REQUIRED: 2
+};
+
+/**
+ * Resolves the texture key for any bubble entity according to Reference A:
+ * - RED -> Pufferfish (Cá nóc)
+ * - GREEN -> Sea Turtle (Rùa biển)
+ * - BLUE -> Jellyfish (Sứa)
+ * - YELLOW -> Starfish (Sao biển)
+ * - PURPLE -> Squid (Mực)
+ * - CRAB / BOMB -> Crab (Cua)
+ * - OCTOPUS / CURSE -> Octopus (Bạch tuộc)
+ * - SHARK -> Shark (Cá mập)
+ * - WHIRLPOOL -> Whirlpool (Xoáy nước)
+ */
+export function getBubbleTextureKey(bubble: { type?: string; color?: string; shieldHp?: number }): string {
+  if (bubble.type === 'TURTLE' || bubble.type === 'TRAP') {
+    if (bubble.shieldHp === 1) return 'bubble_TURTLE_CRACKED';
+    return 'bubble_TURTLE';
+  }
+  if (bubble.type === 'PUFFERFISH') return 'bubble_PUFFERFISH';
+  if (bubble.type === 'JELLYFISH' || bubble.type === 'RAINBOW') return 'bubble_JELLYFISH';
+  if (bubble.type === 'STARFISH' || bubble.type === 'BONUS') return 'bubble_STARFISH';
+  if (bubble.type === 'SQUID' || bubble.type === 'LIGHTNING') return 'bubble_SQUID';
+  if (bubble.type === 'CRAB' || bubble.type === 'BOMB') return 'bubble_CRAB';
+  if (bubble.type === 'OCTOPUS' || bubble.type === 'CURSE') return 'bubble_OCTOPUS';
+  if (bubble.type === 'SHARK') return 'bubble_SHARK';
+  if (bubble.type === 'WHIRLPOOL') return 'bubble_WHIRLPOOL';
+  if (bubble.type === 'ROCK' || bubble.type === 'ICE' || bubble.type === 'CAGE' || bubble.type === 'SEAWEED') {
+    return `bubble_${bubble.type}`;
+  }
+  if (bubble.color) {
+    return `bubble_${bubble.color}`;
+  }
+  return 'bubble_RED';
+}
+
